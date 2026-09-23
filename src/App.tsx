@@ -11,6 +11,7 @@ import { ClassInsights } from './components/teacher/ClassInsights';
 import { Footer } from './components/common/Footer';
 import { AuthModal } from './components/auth/AuthModal';
 import { ProfileModal } from './components/profile/ProfileModal';
+import { PresentationDeck } from './components/presentation/PresentationDeck';
 
 import { ShieldAlert } from 'lucide-react';
 
@@ -63,6 +64,8 @@ export const App: React.FC = () => {
         return <DefenseReviewDetail />;
       case 'teacher_insights':
         return <ClassInsights />;
+      case 'presentation':
+        return <PresentationDeck />;
       default:
         return <LandingPage />;
     }
@@ -70,11 +73,11 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-zinc-100 flex flex-col font-sans">
-      <Navbar />
+      {currentView !== 'presentation' && <Navbar />}
       <main className="flex-1">
         {renderContent()}
       </main>
-      <Footer />
+      {currentView !== 'presentation' && <Footer />}
       <AuthModal />
       <ProfileModal />
     </div>
