@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   X,
   ArrowRight,
+  Download,
   Layers,
   Award,
   Zap,
@@ -892,6 +893,17 @@ export const PresentationDeck: React.FC = () => {
             <span className="hidden md:inline">Тексты для Canva</span>
           </button>
 
+          {/* Download ready PDF */}
+          <a
+            href="/StudyMaxxing_Pitch_Deck.pdf"
+            download="StudyMaxxing_Pitch_Deck.pdf"
+            className="px-2.5 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 text-xs transition-colors flex items-center gap-1.5 cursor-pointer font-bold"
+            title="Скачать готовый PDF файл презентации"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden md:inline">Скачать PDF</span>
+          </a>
+
           {/* Print / PDF Export */}
           <button
             onClick={() => window.print()}
@@ -899,7 +911,7 @@ export const PresentationDeck: React.FC = () => {
             title="Распечатать или сохранить как PDF"
           >
             <Printer className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="hidden md:inline">Печать / PDF</span>
+            <span className="hidden md:inline">Печать</span>
           </button>
 
           {/* Grid Overview button */}

@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>StudyMaxxing — Pitch Deck (10 слайдов)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+    @page {
+      size: 1920px 1080px;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #000000;
+      color: #f4f4f5;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .slide {
+      width: 1920px;
+      height: 1080px;
+      max-width: 1920px;
+      max-height: 1080px;
+      page-break-after: always;
+      break-after: page;
+      position: relative;
+      background-color: #09090b;
+      padding: 70px 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    /* Ambient background glow */
+    .glow-top-right {
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0) 70%);
+      pointer-events: none;
+    }
+
+    .glow-bottom-left {
+      position: absolute;
+      bottom: -100px;
+      left: -100px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(39, 39, 42, 0.4) 0%, rgba(39, 39, 42, 0) 70%);
+      pointer-events: none;
+    }
+
+    /* Header */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      position: relative;
+      z-index: 10;
+    }
+
+    .category-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: #10b981;
+      font-size: 15px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .badge-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #10b981;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+    }
+
+    .slide-tag {
+      font-size: 15px;
+      font-weight: 700;
+      color: #71717a;
+      letter-spacing: 0.05em;
+    }
+
+    /* Title section */
+    .title-section {
+      margin-top: 30px;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 10;
+    }
+
+    .slide-title {
+      font-size: 52px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: #ffffff;
+      margin-bottom: 12px;
+    }
+
+    .slide-subtitle {
+      font-size: 22px;
+      color: #a1a1aa;
+      line-height: 1.5;
+      max-width: 1400px;
+      font-weight: 400;
+    }
+
+    /* Content Area */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Bento Grid Layouts */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 28px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 28px;
+    }
+
+    .bento-card {
+      background: #121215;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 32px 36px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .bento-card.highlight {
+      background: rgba(16, 185, 129, 0.04);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .bento-card.danger {
+      background: rgba(239, 68, 68, 0.05);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .metric-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 46px;
+      font-weight: 800;
+      color: #10b981;
+      line-height: 1;
+      margin-bottom: 14px;
+    }
+
+    .metric-val.danger {
+      color: #ef4444;
+    }
+
+    .metric-val.neutral {
+      color: #ffffff;
+    }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f4f4f5;
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+
+    .card-desc {
+      font-size: 15px;
+      color: #a1a1aa;
+      line-height: 1.55;
+    }
+
+    .card-tag {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: #1c1c21;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #d4d4d8;
+      margin-bottom: 16px;
+      width: fit-content;
+    }
+
+    .banner-bar {
+      margin-top: 24px;
+      padding: 20px 28px;
+      background: #141418;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: #a1a1aa;
+    }
+
+    .banner-bar.emerald {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      color: #34d399;
+    }
+
+    /* Comparison Table */
+    .comp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 16px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .comp-table th {
+      background: #18181b;
+      padding: 18px 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      text-transform: uppercase;
+      color: #a1a1aa;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: left;
+    }
+
+    .comp-table th.winner-th {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+      font-weight: 800;
+    }
+
+    .comp-table td {
+      padding: 18px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      background: #101014;
+      color: #d4d4d8;
+    }
+
+    .comp-table td.winner-td {
+      background: rgba(16, 185, 129, 0.04);
+      color: #34d399;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Footer */
+    .slide-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 22px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      color: #71717a;
+      position: relative;
+      z-index: 10;
+    }
+
+    .footer-page {
+      font-weight: 700;
+      color: #d4d4d8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SLIDE 1: COVER -->
+  <div class="slide">
+    <div class="glow-top-right"></div>
+    <div class="glow-bottom-left"></div>
+
+    <div class="slide-header">
+      <div class="category-badge">
+        <div class="badge-dot"></div>
+        <span>STARTUP PITCH DECK // 2026</span>
+      </div>
+      <div class="slide-tag">SLIDE 01 / 10</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="slide-title">StudyMaxxing</h1>
+      <p class="slide-subtitle">Платформа автоматизированной устной ИИ-защиты школьного кода и контроля академической честности</p>
+    </div>
+
+    <div class="content-area">
+      <div class="grid-3">
+        <div class="bento-card highlight">
+          <div>
+            <div class="card-tag">ORAL_DEFENSE_ENGINE</div>
+            <div class="metric-val">15с</div>
+            <div class="card-title">Голосовой блиц-экзамен</div>
+          </div>
+          <div class="card-desc">Ученик устно объясняет логику своего решения за 15 секунд прямо в микрофон. Времени обратиться к ChatGPT или шпаргалкам нет.</div>
+        </div>
+
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">AST_BENCHMARK_CHECK</div>
+            <div class="metric-val">0%</div>
+            <div class="card-title">Справедливый скоринг</div>
+          </div>
+          <div class="card-desc">Нерабочий код штрафуется строго по доле недописанности. Случайные описки (забытые скобки, двоеточия) не режут баллы.</div>
+        </div>
+
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">CURRICULUM_GRADES</div>
+            <div class="metric-val">5–11</div>
+            <div class="card-title">Сквозная программа</div>
+          </div>
+          <div class="card-desc">Калиброванные легкие задания для каждого возраста с эталонами учителей (НИШ, РФМШ, общеобразовательные лицеи).</div>
+        </div>
+      </div>
+
+      <div class="banner-bar">
+        <span>ТЕХНОЛОГИЧЕСКИЙ СТЕК: React 18 • TypeScript • Tailwind CSS • Web Speech API • Hybrid AI Engine</span>
+        <span style="color: #10b981; font-weight: 700;">MVP READY // PROD-TESTED</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STUDYMAXXING // ACADEMIC INTEGRITY ENGINE</span>
+      <span class="footer-page">01 / 10</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: PROBLEM -->
+  <div class="slide">
+    <div class="glow-top-right"></div>
+    <div class="glow-bottom-left"></div>
+
+    <div class="slide-header">
+      <div class="category-badge">
+        <div class="badge-dot"></div>
+        <span>ПРОБЛЕМА // PAIN POINT</span>
+      </div>
+      <div class="slide-tag">SLIDE 02 / 10</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="slide-title">Код пишут нейросети, а не ученики</h1>
+      <p class="slide-subtitle">Генеративный ИИ (ChatGPT, DeepSeek, Claude) обесценил традиционную сдачу домашних заданий по IT</p>
+    </div>
+
+    <div class="content-area">
+      <div class="grid-3">
+        <div class="bento-card danger">
+          <div>
+            <div class="card-tag" style="color: #f87171; border-color: rgba(239,68,68,0.3);">МАССОВЫЙ ЧИТИНГ</div>
+            <div class="metric-val danger">87%</div>
+            <div class="card-title">Сдача чужого кода</div>
+          </div>
+          <div class="card-desc">Школьников генерируют решения через нейросети за 5 секунд. Формально программа работает, но знаний синтаксиса у ученика ноль.</div>
+        </div>
+
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">РУТИНА ПРЕПОДАВАТЕЛЯ</div>
+            <div class="metric-val neutral">40+ ч</div>
+            <div class="card-title">Потеря времени учителя</div>
+          </div>
+          <div class="card-desc">В месяц уходит на попытки вручную опросить 30 человек у доски по каждому заданию, отвлекаясь от реального учебного процесса.</div>
+        </div>
+
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">БЕССИЛИЕ АВТОТЕСТОВ</div>
+            <div class="metric-val neutral">0%</div>
+            <div class="card-title">Защита от списывания</div>
+          </div>
+          <div class="card-desc">Существующие платформы проверяют только ввод/вывод. Если ChatGPT дал верный ответ — система ставит «5», обманывая школу.</div>
+        </div>
+      </div>
+
+      <div class="banner-bar" style="background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.25); color: #fca5a5;">
+        <span>КЛЮЧЕВОЙ КРИЗИС: Оценка за домашний код больше не отражает реальные знания учащегося.</span>
+        <span style="font-weight: 700;">ВЫЗОВ ОБРАЗОВАНИЯ</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STUDYMAXXING // ACADEMIC INTEGRITY ENGINE</span>
+      <span class="footer-page">02 / 10</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: SOLUTION -->
+  <div class="slide">
+    <div class="glow-top-right"></div>
+    <div class="glow-bottom-left"></div>
+
+    <div class="slide-header">
+      <div class="category-badge">
+        <div class="badge-dot"></div>
+        <span>НАШЕ РЕШЕНИЕ // SOLUTION</span>
+      </div>
+      <div class="slide-tag">SLIDE 03 / 10</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="slide-title">StudyMaxxing: Двухконтурная верификация</h1>
+      <p class="slide-subtitle">Мгновенная сверка кода с эталоном учителя + 15-секундный голосовой блиц у микрофона</p>
+    </div>
+
+    <div class="content-area">
+      <div class="grid-3">
+        <div class="bento-card highlight">
+          <div>
+            <div class="card-tag">КОНТУР I</div>
+            <div class="card-title" style="font-size: 24px; margin-top: 10px;">AST-Бенчмарк кода</div>
+          </div>
+          <div class="card-desc" style="font-size: 16px;">
+            Глубокая сверка алгоритмических структур с эталоном учителя. Распознавание статуса «КОД НЕРАБОЧИЙ», отсечение пустых шаблонов и ChatGPT-аномалий.
+          </div>
+        </div>
+
+        <div class="bento-card highlight">
+          <div>
+            <div class="card-tag">КОНТУР II</div>
+            <div class="card-title" style="font-size: 24px; margin-top: 10px;">Прицельные вопросы</div>
+          </div>
+          <div class="card-desc" style="font-size: 16px;">
+            ИИ формулирует 3 каверзных вопроса именно по строкам кода ученика: «Зачем здесь условие?», «Какую роль выполняет переменная в цикле?».
+          </div>
+        </div>
+
+        <div class="bento-card highlight">
+          <div>
+            <div class="card-tag">КОНТУР III</div>
+            <div class="card-title" style="font-size: 24px; margin-top: 10px;">15с Голосовой блиц</div>
+          </div>
+          <div class="card-desc" style="font-size: 16px;">
+            Ученик в реальном времени отвечает в микрофон. Web Speech API отслеживает программные термины (`цикл`, `остаток`, `счетчик`) и выносит вердикт.
+          </div>
+        </div>
+      </div>
+
+      <div class="banner-bar emerald">
+        <span>РЕЗУЛЬТАТ: Учитель получает цифровой протокол с транскриптом ответа, совпадением токенов и процентом авторства.</span>
+        <span style="font-weight: 700;">100% АВТОМАТИЗАЦИЯ</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STUDYMAXXING // ACADEMIC INTEGRITY ENGINE</span>
+      <span class="footer-page">03 / 10</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: HOW IT WORKS -->
+  <div class="slide">
+    <div class="glow-top-right"></div>
+    <div class="glow-bottom-left"></div>
+
+    <div class="slide-header">
+      <div class="category-badge">
+        <div class="badge-dot"></div>
+        <span>КАК ЭТО РАБОТАЕТ // PRODUCT FLOW</span>
+      </div>
+      <div class="slide-tag">SLIDE 04 / 10</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="slide-title">Пайплайн защиты за 90 секунд</h1>
+      <p class="slide-subtitle">Бесшовный 4-шаговый цикл от загрузки файла до итогового протокола с аудио-транскриптом</p>
+    </div>
+
+    <div class="content-area">
+      <div class="grid-4">
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">ШАГ 01</div>
+            <div class="card-title">Загрузка кода</div>
+          </div>
+          <div class="card-desc">Ученик отправляет файл `solution.py` своего класса или редактирует код прямо во встроенном онлайн-редакторе.</div>
+        </div>
+
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">ШАГ 02</div>
+            <div class="card-title">Анализ за 1.5с</div>
+          </div>
+          <div class="card-desc">Система сверяет решение с эталоном учителя, проверяет здоровье кода (рабочий / опечатка / сломан / пуст).</div>
+        </div>
+
+        <div class="bento-card highlight">
+          <div>
+            <div class="card-tag" style="color: #10b981; border-color: rgba(16,185,129,0.3);">ШАГ 03</div>
+            <div class="card-title" style="color: #34d399;">15с Голосовой блиц</div>
+          </div>
+          <div class="card-desc">Ученик отвечает на 3 вопроса в микрофон. Web Speech API отслеживает попадание в смысловые токены кода.</div>
+        </div>
+
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">ШАГ 04</div>
+            <div class="card-title">Итоговый протокол</div>
+          </div>
+          <div class="card-desc">Формируется цифровой отчет: точная аудио-расшифровка, балл авторства и рекомендация в журнал учителя.</div>
+        </div>
+      </div>
+
+      <div class="banner-bar">
+        <span>СКОРОСТЬ ПРОЦЕССА: 90 секунд на 1 ученика • Время учителя на опрос: 0 минут • Охват: 100% класса</span>
+        <span style="color: #10b981; font-weight: 700;">REALTIME DEFENSE</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STUDYMAXXING // ACADEMIC INTEGRITY ENGINE</span>
+      <span class="footer-page">04 / 10</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: TECH STACK -->
+  <div class="slide">
+    <div class="glow-top-right"></div>
+    <div class="glow-bottom-left"></div>
+
+    <div class="slide-header">
+      <div class="category-badge">
+        <div class="badge-dot"></div>
+        <span>ТЕХНОЛОГИЧЕСКИЙ СТЕК // ARCHITECTURE</span>
+      </div>
+      <div class="slide-tag">SLIDE 05 / 10</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="slide-title">Современный клиентский стек без задержек</h1>
+      <p class="slide-subtitle">Высокопроизводительная веб-архитектура, работающая в реальном времени прямо в браузере</p>
+    </div>
+
+    <div class="content-area">
+      <div class="grid-4">
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">FRONTEND CORE</div>
+            <div class="metric-val neutral" style="font-size: 32px;">React 18 & TS</div>
+            <div class="card-title">Строгая типизация</div>
+          </div>
+          <div class="card-desc">Быстрый бандл Vite v5.4, нулевой оверхед, строгие контракты данных между сущностями классов и заданий.</div>
+        </div>
+
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">VOICE STREAM</div>
+            <div class="metric-val neutral" style="font-size: 32px;">Speech API</div>
+            <div class="card-title">Браузерная речь</div>
+          </div>
+          <div class="card-desc">Распознавание речи без тяжелых аудио-серверов. Прямая работа с микрофоном и словарем токенов Python.</div>
+        </div>
+
+        <div class="bento-card highlight">
+          <div>
+            <div class="card-tag">AI SCORING</div>
+            <div class="metric-val" style="font-size: 32px;">Hybrid AI v2.4</div>
+            <div class="card-title">Калибровка ответа</div>
+          </div>
+          <div class="card-desc">Локальный эвристический движок для мгновенного скоринга + опциональный Gemini 1.5 Flash Cloud для глубокого анализа.</div>
+        </div>
+
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">PRIVACY FIRST</div>
+            <div class="metric-val neutral" style="font-size: 32px;">Zero Face Leak</div>
+            <div class="card-title">Безопасность данных</div>
+          </div>
+          <div class="card-desc">Нейтральные векторные SVG-аватарки DiceBear, отсутствие фото реальных людей, изоляция школьных контуров.</div>
+        </div>
+      </div>
+
+      <div class="banner-bar">
+        <span>ПРОИЗВОДИТЕЛЬНОСТЬ: Размер бандла 449 kB JS • Время загрузки &lt; 0.3с • Без сторонних трекеров</span>
+        <span style="color: #10b981; font-weight: 700;">PROD ARCHITECTURE</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STUDYMAXXING // ACADEMIC INTEGRITY ENGINE</span>
+      <span class="footer-page">05 / 10</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: UNIQUE VALUE PROPOSITION -->
+  <div class="slide">
+    <div class="glow-top-right"></div>
+    <div class="glow-bottom-left"></div>
+
+    <div class="slide-header">
+      <div class="category-badge">
+        <div class="badge-dot"></div>
+        <span>НАШИ ПРЕИМУЩЕСТВА // UNIQUE VALUE</span>
+      </div>
+      <div class="slide-tag">SLIDE 06 / 10</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="slide-title">Почему StudyMaxxing побеждает</h1>
+      <p class="slide-subtitle">Инженерные механизмы, которые пресекают списывание на корню и экономят время учителю</p>
+    </div>
+
+    <div class="content-area">
+      <div class="grid-2">
+        <div class="bento-card">
+          <div class="card-tag">15-СЕКУНДНЫЙ АНТИ-ЧИТ</div>
+          <div class="card-title" style="font-size: 24px;">Лимит времени исключает подглядывание</div>
+          <div class="card-desc" style="font-size: 16px;">
+            15 секунд на ответ — ровно столько, чтобы сформулировать мысль вслух, но абсолютно недостаточно, чтобы вбить вопрос в ChatGPT или искать ответ на втором мониторе.
+          </div>
+        </div>
+
+        <div class="bento-card highlight">
+          <div class="card-tag" style="color: #10b981; border-color: rgba(16,185,129,0.3);">СПРАВЕДЛИВОСТЬ</div>
+          <div class="card-title" style="font-size: 24px;">Прощение случайных опечаток</div>
+          <div class="card-desc" style="font-size: 16px;">
+            Забытая закрывающая скобка `)` или двоеточие `:` в конце `if` прощаются (88–95% зачет). Мы оцениваем алгоритмическое мышление школьника, а не механические опечатки.
+          </div>
+        </div>
+
+        <div class="bento-card">
+          <div class="card-tag">СТАТУС «КОД НЕРАБОЧИЙ»</div>
+          <div class="card-title" style="font-size: 24px;">Детекция недописанности и пустых файлов</div>
+          <div class="card-desc" style="font-size: 16px;">
+            При сдаче нерабочего или недописанного кода экзаменатор пропорционально снижает процент и задает прицельный вопрос: «На сколько процентов не завершен алгоритм?».
+          </div>
+        </div>
+
+        <div class="bento-card">
+          <div class="card-tag">0 РУТИНЫ ДЛЯ УЧИТЕЛЯ</div>
+          <div class="card-title" style="font-size: 24px;">Зачисление классов по @никнеймам</div>
+          <div class="card-desc" style="font-size: 16px;">
+            Учитель вставляет список ников `@arman, @dias` за 30 секунд. Ученики автоматически закрепляются за школой преподавателя без возни с корпоративными почтами.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STUDYMAXXING // ACADEMIC INTEGRITY ENGINE</span>
+      <span class="footer-page">06 / 10</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: MARKET & TARGET AUDIENCE -->
+  <div class="slide">
+    <div class="glow-top-right"></div>
+    <div class="glow-bottom-left"></div>
+
+    <div class="slide-header">
+      <div class="category-badge">
+        <div class="badge-dot"></div>
+        <span>РЫНОК & АУДИТОРИЯ // MARKET SIZE</span>
+      </div>
+      <div class="slide-tag">SLIDE 07 / 10</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="slide-title">Рынок школ и IT-образования</h1>
+      <p class="slide-subtitle">Растущий институциональный спрос на валидацию знаний в условиях тотальной доступности нейросетей</p>
+    </div>
+
+    <div class="content-area">
+      <div class="grid-3">
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">TAM // ВЕСЬ РЫНОК</div>
+            <div class="metric-val neutral">7 500+</div>
+            <div class="card-title">Школ Казахстана</div>
+          </div>
+          <div class="card-desc">Более 3.8 млн школьников, изучающих информатику в 5–11 классах. Объем рынка школьного EdTech в СНГ превышает $1.2 млрд.</div>
+        </div>
+
+        <div class="bento-card highlight">
+          <div>
+            <div class="card-tag">SAM // НАШ СЕГМЕНТ</div>
+            <div class="metric-val">300+</div>
+            <div class="card-title">Флагманские лицеи</div>
+          </div>
+          <div class="card-desc">Сеть НИШ (Назарбаев Интеллектуальные Школы), РФМШ, лицеи «БИЛ» и гимназии «Дарын» с повышенными требованиями к честности.</div>
+        </div>
+
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">SOM // ГОД 1</div>
+            <div class="metric-val neutral">25 школ</div>
+            <div class="card-title">Пилотная программа</div>
+          </div>
+          <div class="card-desc">5 000+ активных учеников и 80 преподавателей информатики в городах Астана, Алматы и Шымкент на первом этапе развертывания.</div>
+        </div>
+      </div>
+
+      <div class="banner-bar">
+        <span>ЦЕЛЕВАЯ АУДИТОРИЯ: Директора школ, завучи по цифровизации, учителя информатики (B2B/B2G)</span>
+        <span style="color: #10b981; font-weight: 700;">EXPANDING MARKET</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STUDYMAXXING // ACADEMIC INTEGRITY ENGINE</span>
+      <span class="footer-page">07 / 10</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: BUSINESS MODEL -->
+  <div class="slide">
+    <div class="glow-top-right"></div>
+    <div class="glow-bottom-left"></div>
+
+    <div class="slide-header">
+      <div class="category-badge">
+        <div class="badge-dot"></div>
+        <span>БИЗНЕС-МОДЕЛЬ // MONETIZATION</span>
+      </div>
+      <div class="slide-tag">SLIDE 08 / 10</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="slide-title">B2B SaaS-подписка для школ</h1>
+      <p class="slide-subtitle">Виральный рост снизу вверх (PLG): бесплатный вход для учителя и подписка на учебное заведение</p>
+    </div>
+
+    <div class="content-area">
+      <div class="grid-3">
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">PLG ВХОДНОЙ БИЛЕТ</div>
+            <div class="metric-val neutral">$0</div>
+            <div class="card-title">Teacher Free</div>
+          </div>
+          <div class="card-desc">1 класс до 25 учеников бесплатно навсегда. Учитель пробует сервис на одном классе, видит эффект и инициирует покупку школой.</div>
+        </div>
+
+        <div class="bento-card highlight">
+          <div>
+            <div class="card-tag">ОСНОВНОЙ ДОХОД</div>
+            <div class="metric-val">$150–300</div>
+            <div class="card-title">School Pro (в месяц)</div>
+          </div>
+          <div class="card-desc">Лицензия на всю школу. Неограниченное число классов 5–11, сводный дашборд завуча, архив аудио-ответов и корпоративный брендинг.</div>
+        </div>
+
+        <div class="bento-card">
+          <div>
+            <div class="card-tag">B2G / ГОСКОНТРАКТЫ</div>
+            <div class="metric-val neutral">Контракт</div>
+            <div class="card-title">District Enterprise</div>
+          </div>
+          <div class="card-desc">Внедрение на уровне городского/областного управления образования: интеграция с Kundelik.kz, выделенный сервер в Казахстане.</div>
+        </div>
+      </div>
+
+      <div class="banner-bar emerald">
+        <span>ЭКОНОМИКА: Виральное распространение через учительские сообщества обеспечивает сверхнизкий CAC и высокий LTV.</span>
+        <span style="font-weight: 700;">PRODUCT-LED GROWTH</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STUDYMAXXING // ACADEMIC INTEGRITY ENGINE</span>
+      <span class="footer-page">08 / 10</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: COMPETITIVE ANALYSIS -->
+  <div class="slide">
+    <div class="glow-top-right"></div>
+    <div class="glow-bottom-left"></div>
+
+    <div class="slide-header">
+      <div class="category-badge">
+        <div class="badge-dot"></div>
+        <span>КОНКУРЕНТНЫЙ АНАЛИЗ // COMPARISON</span>
+      </div>
+      <div class="slide-tag">SLIDE 09 / 10</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="slide-title">Сравнение с существующими решениями</h1>
+      <p class="slide-subtitle">Ни одна платформа на рынке не проверяет авторство через голосовой блиц-диалог</p>
+    </div>
+
+    <div class="content-area">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Критерий оценки</th>
+            <th>Stepik / Яндекс.Учебник</th>
+            <th>Google Classroom / Moodle</th>
+            <th class="winner-th">StudyMaxxing</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Защита от списывания из ChatGPT</strong></td>
+            <td style="color: #ef4444;">❌ 0% (код копируется за 5с)</td>
+            <td style="color: #ef4444;">❌ Нет защиты</td>
+            <td class="winner-td">✅ 15с голосовой блиц</td>
+          </tr>
+          <tr>
+            <td><strong>Устная защита автором</strong></td>
+            <td>Отсутствует</td>
+            <td>Только вручную у доски</td>
+            <td class="winner-td">✅ Авто-опрос в Web Speech API</td>
+          </tr>
+          <tr>
+            <td><strong>Толерантность к опечаткам</strong></td>
+            <td style="color: #ef4444;">❌ Ошибка компиляции (0 баллов)</td>
+            <td>На усмотрение учителя</td>
+            <td class="winner-td">✅ Прощение скобок и двоеточий</td>
+          </tr>
+          <tr>
+            <td><strong>Экономия времени учителя</strong></td>
+            <td>Частичная (только автотесты)</td>
+            <td style="color: #ef4444;">0% (ручной опрос)</td>
+            <td class="winner-td">✅ -90% времени на опрос</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="banner-bar" style="margin-top: 24px;">
+        <span>ПОЗИЦИОНИРОВАНИЕ: StudyMaxxing открывает новую категорию EdTech — Oral Code Defense (Устная защита кода).</span>
+        <span style="color: #10b981; font-weight: 700;">FIRST-MOVER ADVANTAGE</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STUDYMAXXING // ACADEMIC INTEGRITY ENGINE</span>
+      <span class="footer-page">09 / 10</span>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: ROADMAP & VISION -->
+  <div class="slide">
+    <div class="glow-top-right"></div>
+    <div class="glow-bottom-left"></div>
+
+    <div class="slide-header">
+      <div class="category-badge">
+        <div class="badge-dot"></div>
+        <span>ДОРОЖНАЯ КАРТА & ФИНАЛ // ROADMAP</span>
+      </div>
+      <div class="slide-tag">SLIDE 10 / 10</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="slide-title">Будущее StudyMaxxing: 2026–2027</h1>
+      <p class="slide-subtitle">От пилотов в лицеях к единому республиканскому стандарту сдачи IT-заданий</p>
+    </div>
+
+    <div class="content-area">
+      <div class="grid-3">
+        <div class="bento-card">
+          <div class="card-tag">ЭТАП I // Q3 2026</div>
+          <div class="card-title" style="font-size: 22px;">Kundelik & Bilimland</div>
+          <div class="card-desc">
+            Официальный плагин и интеграция с государственными электронными журналами: оценки и ссылки на аудио-протоколы защит выгружаются в журнал в один клик.
+          </div>
+        </div>
+
+        <div class="bento-card">
+          <div class="card-tag">ЭТАП II // Q4 2026</div>
+          <div class="card-title" style="font-size: 22px;">Олимпиадный C++ & JS</div>
+          <div class="card-desc">
+            Расширение эвристического анализатора кода на олимпиадные языки (C++, Java, JavaScript) для специализированных IT-лицеев и олимпиадных сборов.
+          </div>
+        </div>
+
+        <div class="bento-card highlight">
+          <div class="card-tag" style="color: #10b981; border-color: rgba(16,185,129,0.3);">ЭТАП III // 2027</div>
+          <div class="card-title" style="font-size: 22px; color: #34d399;">StudyMaxxing Voice App</div>
+          <div class="card-desc">
+            Нативное мобильное приложение для школьников: защита кода прямо с экрана смартфона за партой без необходимости стационарных компьютеров и гарнитур.
+          </div>
+        </div>
+      </div>
+
+      <div class="banner-bar emerald" style="padding: 24px 32px;">
+        <span style="font-size: 16px;">Готовы протестировать платформу в вашей школе? Сервис полностью развернут и доступен для демонстрации.</span>
+        <span style="font-size: 15px; font-weight: 800; color: #ffffff;">ГОТОВ К ПИЛОТУ</span>
+      </div>
+    </div>
+
+    <div class="slide-footer">
+      <span>STUDYMAXXING // ACADEMIC INTEGRITY ENGINE</span>
+      <span class="footer-page">10 / 10</span>
+    </div>
+  </div>
+
+</body>
+</html>
