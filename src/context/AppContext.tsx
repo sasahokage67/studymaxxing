@@ -28,6 +28,7 @@ interface AppContextType {
   authModalTab: 'login' | 'register';
   authModalRole?: UserRole;
   users: User[];
+  selectedAssignmentId: string | null;
   selectedSubmissionId: string | null;
   selectedDefenseSessionId: string | null;
   assignments: Assignment[];
@@ -50,6 +51,7 @@ interface AppContextType {
   login: (username: string, password: string) => { success: boolean; error?: string };
   register: (data: { username: string; password: string; name: string; role: UserRole }) => { success: boolean; error?: string };
   logout: () => void;
+  selectAssignment: (id: string | null) => void;
   selectSubmission: (id: string | null) => void;
   selectDefenseSession: (id: string | null) => void;
   createAssignment: (data: Partial<Assignment>) => Assignment;
@@ -112,12 +114,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [currentView, setCurrentView] = useState<string>('landing');
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>('asg_game');
   const [selectedSubmissionId, setSelectedSubmissionId] = useState<string | null>('sub_arman_1');
   const [selectedDefenseSessionId, setSelectedDefenseSessionId] = useState<string | null>('def_arman_1');
 
   const [assignments, setAssignments] = useState<Assignment[]>(() => {
     const saved = localStorage.getItem('lp_assignments');
-    return saved ? JSON.parse(saved) : SEEDED_ASSIGNMENTS;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map((a: Assignment) => {
+            const seed = SEEDED_ASSIGNMENTS.find((s) => s.id === a.id);
+            if (seed && !a.referenceCode) {
+              return { ...a, referenceCode: seed.referenceCode, starterTemplate: seed.starterTemplate };
+            }
+            return a;
+          });
+        }
+      } catch (e) {}
+    }
+    return SEEDED_ASSIGNMENTS;
   });
 
   const [submissions, setSubmissions] = useState<Submission[]>(() => {
@@ -314,6 +331,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const selectAssignment = (id: string | null) => {
+    setSelectedAssignmentId(id);
+  };
+
   const createAssignment = (data: Partial<Assignment>): Assignment => {
     const newAssignment: Assignment = {
       id: `asg_${Date.now()}`,
@@ -324,13 +345,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       submissionType: data.submissionType || 'code',
       questionCount: data.questionCount || 3,
       answerMode: data.answerMode || 'voice_or_text',
-      timerSeconds: data.timerSeconds || 20,
+      timerSeconds: data.timerSeconds || 15,
       allowRetakes: data.allowRetakes || false,
       autoSubmit: data.autoSubmit ?? true,
       scoreVisibility: data.scoreVisibility || 'after_review',
+      referenceCode: data.referenceCode || '',
+      starterTemplate: data.starterTemplate || '',
       createdAt: new Date().toISOString()
     };
     setAssignments((prev) => [newAssignment, ...prev]);
+    setSelectedAssignmentId(newAssignment.id);
     return newAssignment;
   };
 
@@ -341,6 +365,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     codeSnippet?: string;
     githubUrl?: string;
   }): Promise<Submission> => {
+    const asg = assignments.find((a) => a.id === data.assignmentId);
     const newSub: Submission = {
       id: `sub_${Date.now()}`,
       assignmentId: data.assignmentId,
@@ -351,6 +376,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       fileName: data.fileName,
       githubUrl: data.githubUrl,
       codeSnippet: data.codeSnippet,
+      referenceCode: asg?.referenceCode,
       status: 'pending'
     };
 
@@ -362,7 +388,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const sub = submissions.find((s) => s.id === submissionId);
     if (!sub) return;
 
-    const { analysis, questions } = await AIService.analyzeSubmission(sub);
+    const asg = assignments.find((a) => a.id === sub.assignmentId);
+    const { analysis, questions } = await AIService.analyzeSubmission({
+      ...sub,
+      referenceCode: asg?.referenceCode || sub.referenceCode
+    });
 
     const sessionId = `def_${Date.now()}`;
     const newSession: DefenseSession = {
@@ -570,6 +600,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         login,
         register,
         logout,
+        selectedAssignmentId,
+        selectAssignment,
         selectSubmission: setSelectedSubmissionId,
         selectDefenseSession: setSelectedDefenseSessionId,
         createAssignment,

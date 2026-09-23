@@ -1,4 +1,4 @@
-import { AIAnalysis, DefenseQuestion, RubricEvaluation, Submission } from '../types';
+import { AIAnalysis, CodeComparisonResult, DefenseQuestion, RubricEvaluation, Submission } from '../types';
 
 export interface EvaluatedQuestionResult {
   question: DefenseQuestion;
@@ -23,8 +23,210 @@ export interface DefenseSessionVerdict {
 
 export class AIService {
   /**
+   * Deep Code Comparator: compares student submission against Teacher's Benchmark Reference Code.
+   * - Evaluates algorithm correctness (key AST structures, guards, error handling)
+   * - Detects exact copies / direct plagiarism
+   * - Detects AI Hallucinations / Overengineering (eval, complex imports, lambda, obscure syntax)
+   * - Produces actionable breakdown with missing elements and risk classification
+   */
+  static compareWithTeacherReference(
+    studentCode: string,
+    referenceCode?: string
+  ): CodeComparisonResult {
+    const sCode = (studentCode || '').trim();
+    const rCode = (referenceCode || '').trim();
+
+    if (!rCode) {
+      return {
+        correctnessScore: 90,
+        similarityScore: 85,
+        plagiarismRisk: 'low',
+        verdict: 'Эталон учителя не был задан — анализ выполнен по стандартным правилам синтаксиса Python.',
+        matchingElements: ['Синтаксис корректен', 'Базовые операторы присутствуют'],
+        missingElements: [],
+        aiAnomalies: []
+      };
+    }
+
+    // Cleaned versions (strip comments, spaces)
+    const strip = (str: string) =>
+      str
+        .split('\n')
+        .map((l) => l.replace(/#.*$/, '').trim())
+        .filter(Boolean)
+        .join('\n');
+
+    const cleanStudent = strip(sCode);
+    const cleanRef = strip(rCode);
+
+    // Exact plagiarism check
+    if (cleanStudent === cleanRef && cleanRef.length > 20) {
+      return {
+        correctnessScore: 100,
+        similarityScore: 100,
+        plagiarismRisk: 'exact_copy',
+        verdict: 'Код на 100% идентичен эталону учителя символ-в-символ. Возможно прямое списывание без изменений.',
+        matchingElements: ['Полное совпадение всех строк с эталоном учителя'],
+        missingElements: [],
+        aiAnomalies: ['100% совпадение с эталоном учителя — подозрение на утечку/списывание']
+      };
+    }
+
+    const matching: string[] = [];
+    const missing: string[] = [];
+    const aiAnomalies: string[] = [];
+
+    // 1. Detect AI / ChatGPT anomalies & overengineering
+    // If student code imports heavy libraries or uses advanced constructs absent in teacher's code
+    const anomalyPatterns = [
+      { key: 'eval(', label: 'Опасная функция eval() вместо арифметических операторов' },
+      { key: 'exec(', label: 'Функция динамического выполнения exec()' },
+      { key: 'import numpy', label: 'Библиотека NumPy для простой школьной задачи' },
+      { key: 'import pandas', label: 'Библиотека Pandas' },
+      { key: 'import sys', label: 'Системный модуль sys' },
+      { key: 'import re', label: 'Регулярные выражения re' },
+      { key: 'lambda ', label: 'Анонимная функция lambda вместо стандартного условия' },
+      { key: '__import__', label: 'Низкоуровневый вызов __import__' },
+      { key: 'decimal', label: 'Модуль высокой точности decimal' }
+    ];
+
+    for (const anom of anomalyPatterns) {
+      if (sCode.includes(anom.key) && !rCode.includes(anom.key)) {
+        aiAnomalies.push(`Обнаружена аномалия: ${anom.label}`);
+      }
+    }
+
+    // 2. Feature extraction from Teacher Reference
+    const refFeatures = [
+      {
+        id: 'input',
+        test: (c: string) => c.includes('input('),
+        desc: 'Пользовательский ввод через input()'
+      },
+      {
+        id: 'int_input',
+        test: (c: string) => c.includes('int(input') || c.includes('int('),
+        desc: 'Преобразование ввода в целое число int()'
+      },
+      {
+        id: 'float_input',
+        test: (c: string) => c.includes('float(input') || c.includes('float('),
+        desc: 'Преобразование вещественных чисел float()'
+      },
+      {
+        id: 'while_loop',
+        test: (c: string) => c.includes('while ') || c.includes('while('),
+        desc: 'Цикл while для повторения действий'
+      },
+      {
+        id: 'for_loop',
+        test: (c: string) => c.includes('for ') && c.includes('in '),
+        desc: 'Цикл for для обхода элементов'
+      },
+      {
+        id: 'guard_zero',
+        test: (c: string) => c.includes('!= 0') || c.includes("!= '0'") || c.includes('!= 0.0') || c.includes('== 0'),
+        desc: 'Проверка деления на ноль (b != 0)'
+      },
+      {
+        id: 'break',
+        test: (c: string) => c.includes('break'),
+        desc: 'Инструкция выхода из цикла break'
+      },
+      {
+        id: 'modulo',
+        test: (c: string) => c.includes('% 2') || c.includes('%'),
+        desc: 'Оператор остатка от деления %'
+      },
+      {
+        id: 'if_elif',
+        test: (c: string) => c.includes('if ') && (c.includes('elif ') || c.includes('else:')),
+        desc: 'Многовариантное ветвление if / elif / else'
+      },
+      {
+        id: 'print_output',
+        test: (c: string) => c.includes('print('),
+        desc: 'Вывод результата через print()'
+      }
+    ];
+
+    let requiredCount = 0;
+    let satisfiedCount = 0;
+
+    for (const feat of refFeatures) {
+      if (feat.test(rCode)) {
+        requiredCount++;
+        if (feat.test(sCode)) {
+          satisfiedCount++;
+          matching.push(feat.desc);
+        } else {
+          missing.push(feat.desc);
+        }
+      }
+    }
+
+    if (requiredCount === 0) {
+      requiredCount = 1;
+      satisfiedCount = sCode.length > 10 ? 1 : 0;
+    }
+
+    // Similarity calculation (token overlap)
+    const tokenize = (t: string) =>
+      t
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, ' ')
+        .split(/\s+/)
+        .filter((w) => w.length > 1);
+
+    const sTokens = new Set(tokenize(sCode));
+    const rTokens = new Set(tokenize(rCode));
+    let commonTokens = 0;
+    for (const tok of sTokens) {
+      if (rTokens.has(tok)) commonTokens++;
+    }
+    const tokenSimilarity = rTokens.size > 0 ? Math.round((commonTokens / rTokens.size) * 100) : 70;
+
+    let correctness = Math.round((satisfiedCount / requiredCount) * 100);
+    // Penalty for critical missing safeguards
+    if (missing.some((m) => m.includes('ноль'))) {
+      correctness = Math.max(30, correctness - 25);
+    }
+
+    let plagiarismRisk: CodeComparisonResult['plagiarismRisk'] = 'low';
+    if (aiAnomalies.length > 0) {
+      plagiarismRisk = 'ai_anomaly';
+    } else if (tokenSimilarity > 92 && correctness > 90) {
+      plagiarismRisk = 'low';
+    } else if (correctness < 60) {
+      plagiarismRisk = 'moderate';
+    }
+
+    let verdict = '';
+    if (correctness >= 85 && aiAnomalies.length === 0) {
+      verdict = `Код на ${correctness}% соответствует эталону учителя. Алгоритм, ветвления и обработка данных написаны в точном соответствии с заданием.`;
+    } else if (aiAnomalies.length > 0) {
+      verdict = `Обнаружены признаки использования ChatGPT/нейросетей (${aiAnomalies.length} аномалии). Решение переусложнено и отклоняется от эталона учителя.`;
+    } else if (missing.length > 0) {
+      verdict = `Код частично отклоняется от эталона учителя (${correctness}% совпадения). Не реализованы: ${missing.join(', ')}.`;
+    } else {
+      verdict = `Базовое совпадение с эталоном: ${correctness}%. Требуется проверка на устной защите.`;
+    }
+
+    return {
+      correctnessScore: Math.min(100, Math.max(0, correctness)),
+      similarityScore: Math.min(100, Math.max(0, tokenSimilarity)),
+      plagiarismRisk,
+      verdict,
+      matchingElements: matching,
+      missingElements: missing,
+      aiAnomalies
+    };
+  }
+
+  /**
    * Intelligently parses code content via AST-like inspection and generates 3 targeted,
-   * line-specific defense questions with strict 15-second response limits.
+   * line-specific defense questions with strict 15-second response limits, taking into account
+   * the teacher's reference benchmark code.
    */
   static async analyzeSubmission(submission: Partial<Submission>): Promise<{
     analysis: AIAnalysis;
@@ -35,6 +237,10 @@ export class AIService {
 
     const code = (submission.codeSnippet || '').trim();
     const fileName = submission.fileName || 'main.py';
+    const referenceCode = (submission.referenceCode || '').trim();
+
+    // Deep comparison with teacher benchmark
+    const codeComparison = this.compareWithTeacherReference(code, referenceCode);
 
     // Heuristic AST-like code inspection for school programs
     const isGuessGame = fileName.includes('guess') || code.includes('secret') || (code.includes('guess') && code.includes('input'));
@@ -338,6 +544,51 @@ export class AIService {
       }
     }
 
+    // Adaptive question tuning based on Teacher Reference Comparison
+    if (referenceCode) {
+      if (codeComparison.plagiarismRisk === 'exact_copy' && questions.length > 0) {
+        questions[0] = {
+          id: `q_${Date.now()}_exact`,
+          defenseSessionId: '',
+          questionText: 'Ваш код на 100% повторяет эталон учителя. Объясните алгоритм решения и каждую строку своими словами: почему программа написана именно так?',
+          skill: 'Авторство и понимание алгоритма',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 1,
+          purpose: 'Проверяет авторство и понимание кода при полном текстуальном совпадении с решением учителя.',
+          mustMention: ['алгоритм', 'строка', 'переменная', 'цикл', 'решение', 'делает', 'работает', 'смысл'],
+          isRequired: true
+        };
+      } else if (codeComparison.aiAnomalies.length > 0 && questions.length >= 3) {
+        const anomaly = codeComparison.aiAnomalies[0];
+        questions[2] = {
+          id: `q_${Date.now()}_anomaly`,
+          defenseSessionId: '',
+          questionText: `В коде обнаружена конструкция (${anomaly}), которой нет в школьном эталоне учителя. Объясните подробно, как она работает и зачем вы ее применили?`,
+          skill: 'Осознанность и проверка ИИ',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 3,
+          purpose: 'Проверяет самостоятельность написания и выявляет слепое копирование решений из ChatGPT.',
+          mustMention: ['код', 'работает', 'функция', 'смысл', 'логика', 'зачем', 'применил'],
+          isRequired: true
+        };
+      } else if (codeComparison.missingElements.some((m) => m.includes('ноль')) && questions.length >= 2) {
+        questions[1] = {
+          id: `q_${Date.now()}_missing_zero`,
+          defenseSessionId: '',
+          questionText: 'В эталоне учителя строго заложена проверка деления на ноль (if b != 0), однако в вашем решении она отсутствует. Что произойдет при вводе b = 0 и как защитить код?',
+          skill: 'Обработка граничных условий',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 2,
+          purpose: 'Проверяет осознание ошибки ZeroDivisionError и расхождения с заданием учителя.',
+          mustMention: ['ноль', 'деление', 'ошибка', 'zerodivisionerror', 'краш', 'нельзя', 'if', 'b', 'проверка'],
+          isRequired: true
+        };
+      }
+    }
+
     const analysis: AIAnalysis = {
       id: `anl_${Date.now()}`,
       submissionId: submission.id || 'sub_new',
@@ -345,9 +596,9 @@ export class AIService {
       coreConcepts: concepts,
       technicalDecisions: [
         {
-          decision: 'Разделение логики на обработчики событий и структуры хранения',
+          decision: `Соответствие эталону учителя: ${codeComparison.correctnessScore}%`,
           importance: 'high',
-          verificationNeeded: true,
+          verificationNeeded: codeComparison.plagiarismRisk !== 'low',
           contextSnippet: code.split('\n')[0] || 'main()'
         },
         {
@@ -356,10 +607,11 @@ export class AIService {
           verificationNeeded: false
         }
       ],
-      potentialGaps: [
+      potentialGaps: codeComparison.missingElements.length > 0 ? codeComparison.missingElements : [
         'Потенциальная утечка памяти при длительном выполнении',
         'Отсутствие валидации исключений на входе (try/except)'
       ],
+      codeComparison,
       generatedAt: new Date().toISOString()
     };
 

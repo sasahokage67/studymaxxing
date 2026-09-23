@@ -66,6 +66,23 @@ export const SEEDED_ASSIGNMENTS: Assignment[] = [
     allowRetakes: false,
     autoSubmit: true,
     scoreVisibility: 'after_review',
+    referenceCode: `secret = 42
+
+print("Компьютер загадал число от 1 до 100!")
+
+while True:
+    guess = int(input("Введите число: "))
+    if guess == secret:
+        print("Поздравляю, вы угадали!")
+        break
+    elif guess < secret:
+        print("Загаданное число больше!")
+    else:
+        print("Загаданное число меньше!")`,
+    starterTemplate: `# Задание 1: Игра «Угадай число»
+# Задайте число secret = 42, организуйте цикл while True с int(input()) и break
+secret = 42
+`,
     createdAt: '2026-09-18T10:00:00Z',
   },
   {
@@ -73,30 +90,38 @@ export const SEEDED_ASSIGNMENTS: Assignment[] = [
     classId: 'cls_cs_7',
     className: 'Информатика 7 «Б» класс · Ветвления if/else',
     title: 'Python: Простой калькулятор двух чисел',
-    description: 'Создать консольный калькулятор для 4 арифметических действий (+, -, *, /) с обязательной проверкой деления на ноль.',
-    submissionType: 'code',
-    questionCount: 3,
-    answerMode: 'voice_only',
-    timerSeconds: 15,
-    allowRetakes: false,
-    autoSubmit: true,
-    scoreVisibility: 'after_review',
-    createdAt: '2026-09-15T14:30:00Z',
-  },
-  {
-    id: 'asg_even',
-    classId: 'cls_cs_8b',
-    className: 'Информатика 8 «Б» класс · Списки и циклы',
-    title: 'Python: Подсчет четных чисел в списке',
-    description: 'Пройтись циклом for по списку чисел, проверить четность через оператор остатка % 2 и подсчитать их количество счетчиком count.',
+    description: 'Создать консольный калькулятор для 4 арифметических действий (+, -, *, /) с обязательной проверкой деления на ноль (b != 0).',
     submissionType: 'code',
     questionCount: 3,
     answerMode: 'voice_or_text',
     timerSeconds: 15,
     allowRetakes: false,
     autoSubmit: true,
-    scoreVisibility: 'immediately',
-    createdAt: '2026-09-12T09:15:00Z',
+    scoreVisibility: 'after_review',
+    referenceCode: `a = float(input("Введите первое число: "))
+op = input("Выберите операцию (+, -, *, /): ")
+b = float(input("Введите второе число: "))
+
+if op == "+":
+    print("Результат:", a + b)
+elif op == "-":
+    print("Результат:", a - b)
+elif op == "*":
+    print("Результат:", a * b)
+elif op == "/":
+    if b != 0:
+        print("Результат:", a / b)
+    else:
+        print("Ошибка: делить на ноль нельзя!")
+else:
+    print("Неизвестная операция")`,
+    starterTemplate: `# Задание 2: Калькулятор двух чисел
+# Запросите числа a и b, операцию op и вычислите результат с проверкой деления на ноль (b != 0)
+a = float(input("Введите первое число: "))
+op = input("Выберите операцию (+, -, *, /): ")
+b = float(input("Введите второе число: "))
+`,
+    createdAt: '2026-09-15T14:30:00Z',
   }
 ];
 

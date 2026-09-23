@@ -43,7 +43,19 @@ export interface Assignment {
   allowRetakes: boolean;
   autoSubmit: boolean;
   scoreVisibility: 'immediately' | 'after_review' | 'never';
+  referenceCode?: string;       // Правильный эталонный код учителя
+  starterTemplate?: string;     // Заготовка / шаблон для ученика
   createdAt: string;
+}
+
+export interface CodeComparisonResult {
+  correctnessScore: number;     // 0-100%
+  similarityScore: number;      // 0-100%
+  plagiarismRisk: 'low' | 'moderate' | 'exact_copy' | 'ai_anomaly';
+  verdict: string;
+  matchingElements: string[];
+  missingElements: string[];
+  aiAnomalies: string[];
 }
 
 export interface TechnicalDecision {
@@ -60,6 +72,7 @@ export interface AIAnalysis {
   coreConcepts: string[];
   technicalDecisions: TechnicalDecision[];
   potentialGaps: string[];
+  codeComparison?: CodeComparisonResult;
   generatedAt: string;
 }
 
@@ -163,6 +176,7 @@ export interface Submission {
   status: SubmissionStatus;
   analysis?: AIAnalysis;
   defenseSessionId?: string;
+  referenceCode?: string;
 }
 
 export interface ClassInsight {

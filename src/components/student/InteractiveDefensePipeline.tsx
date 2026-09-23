@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { AIService, DefenseSessionVerdict, EvaluatedQuestionResult } from '../../services/aiService';
 import { SpeechService } from '../../services/speechService';
-import { DefenseQuestion } from '../../types';
+import { DefenseQuestion, AIAnalysis } from '../../types';
 
 interface InteractiveDefensePipelineProps {
   initialAssignmentId?: string;
@@ -111,6 +111,7 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
   );
   const [fileName, setFileName] = useState('guess_game.py');
   const [codeContent, setCodeContent] = useState(CODE_PRESETS[0].code);
+  const [currentAnalysis, setCurrentAnalysis] = useState<AIAnalysis | null>(null);
 
   // Analysis telemetry state
   const [analysisStep, setAnalysisStep] = useState(0);
@@ -154,6 +155,31 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
 
   // Current active question
   const activeQuestion = generatedQuestions[currentQIndex];
+
+  // Sync assignment when prop changes
+  useEffect(() => {
+    if (initialAssignmentId) {
+      setSelectedAssignmentId(initialAssignmentId);
+    }
+  }, [initialAssignmentId]);
+
+  // Sync code and filename when selected assignment changes
+  useEffect(() => {
+    const asg = assignments.find((a) => a.id === selectedAssignmentId);
+    if (asg) {
+      if (asg.id === 'asg_game') {
+        setFileName('guess_game.py');
+        setCodeContent(asg.referenceCode || CODE_PRESETS[0].code);
+      } else if (asg.id === 'asg_calc') {
+        setFileName('calculator.py');
+        setCodeContent(asg.starterTemplate || asg.referenceCode || CODE_PRESETS[1].code);
+      } else {
+        const safeName = (asg.title || 'task').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20) || 'solution';
+        setFileName(`${safeName}.py`);
+        setCodeContent(asg.starterTemplate || asg.referenceCode || `# Решение задания: ${asg.title}\n`);
+      }
+    }
+  }, [selectedAssignmentId, assignments]);
 
   // 15-second Timer countdown effect
   useEffect(() => {
@@ -209,10 +235,14 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
     // Step 3: Question formulation
     setTimeout(() => setAnalysisStep(4), 1300);
 
-    const { questions } = await AIService.analyzeSubmission({
+    const currentAsg = assignments.find((a) => a.id === selectedAssignmentId);
+    const { analysis, questions } = await AIService.analyzeSubmission({
       codeSnippet: codeContent,
-      fileName
+      fileName,
+      referenceCode: currentAsg?.referenceCode
     });
+
+    setCurrentAnalysis(analysis);
 
     setTimeout(() => {
       setGeneratedQuestions(questions);
@@ -425,12 +455,12 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
             <div className="border border-zinc-800 bg-zinc-950 p-5 rounded-xl space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                  1. Выберите задание для сдачи
+                  1. Текущее задание курса:
                 </label>
                 <select
                   value={selectedAssignmentId}
                   onChange={(e) => setSelectedAssignmentId(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 font-sans"
                 >
                   {assignments.map((asg) => (
                     <option key={asg.id} value={asg.id}>
@@ -440,27 +470,83 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
                 </select>
               </div>
 
+              {/* Assignment details & teacher benchmark badge */}
+              {(() => {
+                const asg = assignments.find((a) => a.id === selectedAssignmentId) || assignments[0];
+                return (
+                  <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-2">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-zinc-400 font-sans font-medium line-clamp-1">{asg.title}</span>
+                      <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold ${
+                        asg.referenceCode
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-zinc-800 text-zinc-400'
+                      }`}>
+                        {asg.referenceCode ? '✓ Эталон учителя задан' : 'Без эталона'}
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-zinc-400 font-sans line-clamp-2 leading-relaxed">
+                      {asg.description}
+                    </p>
+
+                    <div className="flex gap-2 pt-1 border-t border-zinc-800/80">
+                      {asg.starterTemplate && (
+                        <button
+                          type="button"
+                          onClick={() => setCodeContent(asg.starterTemplate!)}
+                          className="flex-1 py-1 px-2 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[10px] font-mono transition-colors text-center"
+                          title="Сбросить код до начального шаблона"
+                        >
+                          Заготовка
+                        </button>
+                      )}
+                      {asg.referenceCode && (
+                        <button
+                          type="button"
+                          onClick={() => setCodeContent(asg.referenceCode!)}
+                          className="flex-1 py-1 px-2 rounded bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-300 text-[10px] font-mono transition-colors text-center font-bold"
+                          title="Вставить правильный эталон для проверки работы алгоритма"
+                        >
+                          Эталон учителя
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setCodeContent('')}
+                        className="py-1 px-2 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 text-[10px] font-mono transition-colors"
+                        title="Очистить поле для ввода"
+                      >
+                        Очистить
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div>
                 <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                  2. Быстрые шаблоны кода (1 клик):
+                  2. Все доступные задания курса (1 клик):
                 </label>
-                <div className="space-y-2">
-                  {CODE_PRESETS.map((p, idx) => (
+                <div className="space-y-1.5">
+                  {assignments.map((asg) => (
                     <button
-                      key={idx}
+                      key={asg.id}
                       type="button"
-                      onClick={() => handleSelectPreset(p)}
-                      className={`w-full text-left p-3 rounded-lg border text-xs transition-all cursor-pointer flex items-center justify-between ${
-                        fileName === p.fileName
+                      onClick={() => setSelectedAssignmentId(asg.id)}
+                      className={`w-full text-left p-2.5 rounded-lg border text-xs transition-all cursor-pointer flex items-center justify-between ${
+                        selectedAssignmentId === asg.id
                           ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300 font-semibold'
                           : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <Code2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>{p.label}</span>
+                      <div className="flex items-center gap-2 truncate pr-2">
+                        <Code2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                        <span className="truncate">{asg.title}</span>
                       </div>
-                      <span className="text-[10px] text-zinc-500 font-mono">{p.fileName}</span>
+                      <span className="text-[9px] text-zinc-500 font-mono flex-shrink-0">
+                        {asg.referenceCode ? '✓ Эталон' : asg.className.slice(0, 10)}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -885,6 +971,100 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
               </div>
             </div>
           </div>
+
+          {/* Teacher Benchmark Comparison Card */}
+          {currentAnalysis?.codeComparison && (
+            <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-5 space-y-4 text-xs font-mono">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-800/80 pb-3 gap-2">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span className="font-semibold text-zinc-200 uppercase tracking-wider">
+                    Сверка с эталоном учителя (Benchmark AI Check)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                    currentAnalysis.codeComparison.plagiarismRisk === 'low'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : currentAnalysis.codeComparison.plagiarismRisk === 'exact_copy'
+                      ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20'
+                      : currentAnalysis.codeComparison.plagiarismRisk === 'ai_anomaly'
+                      ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                      : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                  }`}>
+                    {currentAnalysis.codeComparison.plagiarismRisk === 'low'
+                      ? 'Низкий риск списывания'
+                      : currentAnalysis.codeComparison.plagiarismRisk === 'exact_copy'
+                      ? '100% совпадение с эталоном'
+                      : currentAnalysis.codeComparison.plagiarismRisk === 'ai_anomaly'
+                      ? 'Обнаружены аномалии ChatGPT'
+                      : 'Отклонение от эталона'}
+                  </span>
+                  <span className="font-bold text-zinc-100 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
+                    {currentAnalysis.codeComparison.correctnessScore}% совпадение
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-zinc-300 font-sans text-xs leading-relaxed">
+                {currentAnalysis.codeComparison.verdict}
+              </p>
+
+              {/* Matching & Missing Elements */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="p-3 rounded-lg bg-zinc-900/40 border border-zinc-800 space-y-1.5">
+                  <span className="text-[10px] text-emerald-400 uppercase font-bold flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Совпадения с эталоном:
+                  </span>
+                  {currentAnalysis.codeComparison.matchingElements.length > 0 ? (
+                    <ul className="space-y-1 text-[11px] text-zinc-300">
+                      {currentAnalysis.codeComparison.matchingElements.map((el: string, i: number) => (
+                        <li key={i} className="flex items-center gap-1.5 text-zinc-300">
+                          <span className="text-emerald-400">✓</span> {el}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-[11px] text-zinc-500">Нет явных совпадений</span>
+                  )}
+                </div>
+
+                <div className="p-3 rounded-lg bg-zinc-900/40 border border-zinc-800 space-y-1.5">
+                  <span className="text-[10px] text-amber-400 uppercase font-bold flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" />
+                    Расхождения / Пропуски:
+                  </span>
+                  {currentAnalysis.codeComparison.missingElements.length > 0 ? (
+                    <ul className="space-y-1 text-[11px] text-amber-300">
+                      {currentAnalysis.codeComparison.missingElements.map((el: string, i: number) => (
+                        <li key={i} className="flex items-center gap-1.5 text-amber-300">
+                          <span className="text-amber-400">⚠</span> {el}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-[11px] text-zinc-400">Все ключевые элементы эталона соблюдены</span>
+                  )}
+                </div>
+              </div>
+
+              {/* AI Anomalies warning if detected */}
+              {currentAnalysis.codeComparison.aiAnomalies.length > 0 && (
+                <div className="p-3 rounded-lg bg-red-950/30 border border-red-500/30 space-y-1">
+                  <span className="text-[10px] text-red-400 uppercase font-bold flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Аномалии генерации нейросетей (ChatGPT):
+                  </span>
+                  <ul className="space-y-0.5 text-[11px] text-red-300">
+                    {currentAnalysis.codeComparison.aiAnomalies.map((anom: string, i: number) => (
+                      <li key={i}>• {anom}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Detailed Question Answers Audit */}
           <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-5 space-y-4">

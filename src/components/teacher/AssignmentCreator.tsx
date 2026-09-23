@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { ArrowLeft, CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ShieldCheck, Sparkles, Code2 } from 'lucide-react';
 
 export const AssignmentCreator: React.FC = () => {
-  const { createAssignment, setCurrentView } = useApp();
+  const { createAssignment, setCurrentView, t } = useApp();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [submissionType, setSubmissionType] = useState<'github' | 'code' | 'pdf'>('github');
+  const [submissionType, setSubmissionType] = useState<'github' | 'code' | 'pdf'>('code');
   const [questionCount, setQuestionCount] = useState<number>(3);
   const [answerMode, setAnswerMode] = useState<'voice_or_text' | 'voice_only' | 'text_only'>('voice_or_text');
-  const [timerSeconds, setTimerSeconds] = useState<number>(30);
+  const [timerSeconds, setTimerSeconds] = useState<number>(15);
   const [autoSubmit, setAutoSubmit] = useState<boolean>(true);
   const [allowRetakes, setAllowRetakes] = useState<boolean>(false);
   const [scoreVisibility, setScoreVisibility] = useState<'after_review' | 'immediately' | 'never'>('after_review');
+  const [referenceCode, setReferenceCode] = useState<string>('');
+  const [starterTemplate, setStarterTemplate] = useState<string>('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +30,9 @@ export const AssignmentCreator: React.FC = () => {
       timerSeconds,
       autoSubmit,
       allowRetakes,
-      scoreVisibility
+      scoreVisibility,
+      referenceCode,
+      starterTemplate
     });
 
     setCurrentView('teacher_dashboard');
@@ -217,6 +221,86 @@ export const AssignmentCreator: React.FC = () => {
           </div>
         </div>
 
+        {/* Section 3: Teacher Benchmark Reference Code */}
+        <div className="bg-surface border border-white/[0.08] rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-mono uppercase text-emerald-400 font-semibold tracking-wider flex items-center gap-1.5">
+              <Code2 className="w-3.5 h-3.5" />
+              <span>3. Эталонное решение учителя (Benchmark Code)</span>
+            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setReferenceCode(`def solve():
+    # Эталонное решение учителя
+    numbers = [int(x) for x in input("Введите числа через пробел: ").split()]
+    even_count = sum(1 for n in numbers if n % 2 == 0)
+    print(f"Количество четных: {even_count}")
+
+solve()`);
+                }}
+                className="text-[10px] font-mono text-zinc-400 hover:text-emerald-300 border border-white/10 hover:border-emerald-500/40 px-2 py-1 rounded transition-colors"
+              >
+                + Шаблон: Четные числа
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setReferenceCode(`n = int(input("Введите число N: "))
+total = 0
+for i in range(1, n + 1):
+    total += i
+print("Сумма чисел:", total)`);
+                }}
+                className="text-[10px] font-mono text-zinc-400 hover:text-emerald-300 border border-white/10 hover:border-emerald-500/40 px-2 py-1 rounded transition-colors"
+              >
+                + Шаблон: Сумма чисел
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-zinc-400 font-sans">
+            Запишите сюда правильное решение задания. ИИ использует этот эталон как критерий истины:
+            проверяет правильность логики ученика, сверяет ключевые ветки, выявляет слепое списывание
+            и вычисляет аномалии генераций нейросетей (ChatGPT).
+          </p>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-mono text-zinc-400">
+                ПРАВИЛЬНЫЙ КОД УЧИТЕЛЯ (REFERENCE BENCHMARK)
+              </label>
+              <span className="text-[10px] font-mono text-emerald-400">Используется ИИ для анализа</span>
+            </div>
+            <textarea
+              rows={8}
+              value={referenceCode}
+              onChange={(e) => setReferenceCode(e.target.value)}
+              placeholder={`# Вставьте эталонный код, который должен написать ученик\n# Например:\na = float(input())\nb = float(input())\nif b != 0:\n    print(a / b)\nelse:\n    print("Деление на ноль")`}
+              className="w-full bg-zinc-950 border border-white/10 rounded-lg p-3 text-xs text-emerald-300 font-mono focus:outline-none focus:border-emerald-500/50 resize-y"
+              spellCheck={false}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono text-zinc-400 mb-1">
+              ЗАГОТОВКА ДЛЯ УЧЕНИКА (STARTER TEMPLATE — НЕОБЯЗАТЕЛЬНО)
+            </label>
+            <textarea
+              rows={4}
+              value={starterTemplate}
+              onChange={(e) => setStarterTemplate(e.target.value)}
+              placeholder={`# Начальный шаблон, который откроется у ученика в редакторе\n# Например:\n# Напишите программу решения задачи...\n`}
+              className="w-full bg-zinc-950 border border-white/10 rounded-lg p-3 text-xs text-zinc-300 font-mono focus:outline-none focus:border-emerald-500/50 resize-y"
+              spellCheck={false}
+            />
+            <p className="text-[10px] text-zinc-500 mt-1 font-sans">
+              Если заготовка не указана, ученик увидит пустой редактор или базовый комментарий с условием.
+            </p>
+          </div>
+        </div>
+
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-3">
           <button
@@ -224,13 +308,13 @@ export const AssignmentCreator: React.FC = () => {
             onClick={() => setCurrentView('teacher_dashboard')}
             className="px-4 py-2 rounded-lg border border-white/10 hover:bg-zinc-800 text-zinc-300 text-xs font-medium transition-all"
           >
-            Cancel
+            Отмена
           </button>
           <button
             type="submit"
             className="px-5 py-2.5 rounded-lg bg-emerald-500 text-zinc-950 hover:bg-emerald-400 font-semibold text-xs transition-all shadow-md shadow-emerald-500/10"
           >
-            Create Assignment & Defense Pipeline
+            Создать задание и активировать проверку ИИ
           </button>
         </div>
       </form>

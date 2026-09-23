@@ -3,14 +3,16 @@ import { useApp } from '../../context/AppContext';
 import { Play, CheckCircle2, Clock, FileCode, Award } from 'lucide-react';
 
 export const StudentDashboard: React.FC = () => {
-  const { currentUser, assignments, defenseSessions, setCurrentView, selectDefenseSession, t } = useApp();
-
-  const handleStartDefense = (sessionId: string) => {
-    selectDefenseSession(sessionId);
-    setCurrentView('student_defense');
-  };
-
-  const sessionList = Object.values(defenseSessions);
+  const { 
+    currentUser, 
+    assignments, 
+    submissions, 
+    defenseSessions, 
+    setCurrentView, 
+    selectDefenseSession, 
+    selectAssignment, 
+    t 
+  } = useApp();
 
   return (
     <div className="max-w-[1380px] mx-auto px-4 sm:px-8 py-8 font-mono">
@@ -45,17 +47,20 @@ export const StudentDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {assignments.slice(0, 2).map((asg) => {
-            const session = sessionList.find((s) => s.assignmentId === asg.id);
+          {assignments.map((asg) => {
+            const userSub = submissions.find(
+              (sub) => sub.assignmentId === asg.id && (sub.studentId === currentUser.id || sub.studentName === currentUser.name)
+            );
+            const session = userSub?.defenseSessionId ? defenseSessions[userSub.defenseSessionId] : undefined;
             const score = session?.overallScore;
-            const isCompleted = session?.status === 'verified' || session?.status === 'teacher_review' || (score !== undefined);
+            const isCompleted = !!userSub && (session?.status === 'verified' || session?.status === 'teacher_review' || (score !== undefined));
             const isAutoApproved = (score || 0) >= 85;
             const needsTeacher = (score || 0) <= 65 && isCompleted;
 
             return (
               <div
                 key={asg.id}
-                className="border border-zinc-800 bg-zinc-950 rounded-xl p-5 flex flex-col justify-between hover:border-zinc-700 transition-colors"
+                className="border border-zinc-800 bg-zinc-950 rounded-xl p-5 flex flex-col justify-between hover:border-zinc-700 transition-colors shadow-sm"
               >
                 <div>
                   <div className="flex items-center justify-between text-xs mb-2">
@@ -70,7 +75,7 @@ export const StudentDashboard: React.FC = () => {
                         : 'border border-blue-500/40 bg-blue-500/10 text-blue-300'
                     }`}>
                       {!isCompleted
-                        ? t('defense_ready')
+                        ? 'Готово к сдаче'
                         : isAutoApproved
                         ? 'ДЗ сдано (85%+)'
                         : needsTeacher
@@ -82,33 +87,37 @@ export const StudentDashboard: React.FC = () => {
                   <h3 className="text-sm font-semibold font-sans text-zinc-100">{asg.title}</h3>
                   <p className="text-xs text-zinc-400 mt-1 font-sans line-clamp-2">{asg.description}</p>
 
-                  <div className="mt-4 flex items-center gap-4 text-[11px] text-zinc-400">
+                  <div className="mt-4 flex items-center gap-4 text-[11px] text-zinc-400 font-mono">
                     <div>{t('questions_count')}: <span className="text-zinc-200 font-semibold">{asg.questionCount}</span></div>
-                    <div>Блиц-таймер: <span className="text-emerald-400 font-semibold">15 сек</span></div>
+                    <div>Блиц-таймер: <span className="text-emerald-400 font-semibold">{asg.timerSeconds || 15} сек</span></div>
+                    {asg.referenceCode && (
+                      <div className="text-zinc-500 text-[10px]">✓ Эталон учителя задан</div>
+                    )}
                   </div>
                 </div>
 
                 <div className="mt-5 pt-3 border-t border-zinc-900 flex items-center justify-between">
                   {isCompleted ? (
-                    <div className="flex items-center gap-1.5 text-xs">
+                    <div className="flex items-center gap-1.5 text-xs font-mono">
                       <span className="text-zinc-500">{t('col_score')}:</span>
                       <span className={`font-bold ${isAutoApproved ? 'text-emerald-400' : needsTeacher ? 'text-red-400' : 'text-zinc-100'}`}>
                         {score}%
                       </span>
                     </div>
                   ) : (
-                    <span className="text-xs text-zinc-500">15 сек на ответ</span>
+                    <span className="text-xs text-amber-400 font-mono font-medium">Ожидает решения</span>
                   )}
 
                   <button
                     onClick={() => {
-                      selectDefenseSession(session?.id || 'def_arman_1');
+                      selectAssignment(asg.id);
+                      if (session?.id) selectDefenseSession(session.id);
                       setCurrentView('student_pipeline');
                     }}
                     className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                       isCompleted
                         ? 'border border-zinc-800 hover:bg-zinc-900 text-zinc-300'
-                        : 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold'
+                        : 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold shadow-sm'
                     }`}
                   >
                     <Play className="w-3 h-3 fill-current" />

@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { ArrowLeft, Volume2, Save, FileDown } from 'lucide-react';
+import {
+  ArrowLeft,
+  Volume2,
+  Save,
+  FileDown,
+  Code2,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp
+} from 'lucide-react';
+import { AIService } from '../../services/aiService';
 
 export const DefenseReviewDetail: React.FC = () => {
   const { 
@@ -27,6 +40,13 @@ export const DefenseReviewDetail: React.FC = () => {
     'Код написал сам. Отвечал уверенно, без пауз. Твердая пятерка за проект.'
   );
   const [isSaved, setIsSaved] = useState(false);
+  const [isCodeDiffOpen, setIsCodeDiffOpen] = useState(true);
+  const [codeViewTab, setCodeViewTab] = useState<'both' | 'student' | 'benchmark'>('both');
+
+  const comparison = submission?.analysis?.codeComparison || AIService.compareWithTeacherReference(
+    submission?.codeSnippet || '',
+    assignment?.referenceCode
+  );
 
   const handleSave = () => {
     saveTeacherReview(session.id, {
@@ -83,9 +103,178 @@ export const DefenseReviewDetail: React.FC = () => {
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Question Evidence (8 cols) */}
+        {/* Left Column: Question Evidence & Teacher Benchmark (8 cols) */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="flex items-center justify-between text-xs text-zinc-500 pb-1">
+          {/* Teacher Benchmark vs Student Code Comparison Card */}
+          <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-5 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-800/80 pb-3 gap-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-xs font-mono font-semibold uppercase text-zinc-200 tracking-wider">
+                  Сверка решения с эталоном учителя (AI Code Comparator)
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
+                  comparison.plagiarismRisk === 'low'
+                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    : comparison.plagiarismRisk === 'exact_copy'
+                    ? 'bg-blue-500/10 text-blue-300 border border-blue-500/20'
+                    : comparison.plagiarismRisk === 'ai_anomaly'
+                    ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                    : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                }`}>
+                  {comparison.plagiarismRisk === 'low'
+                    ? 'Низкий риск'
+                    : comparison.plagiarismRisk === 'exact_copy'
+                    ? '100% эталон'
+                    : comparison.plagiarismRisk === 'ai_anomaly'
+                    ? 'Аномалия ChatGPT'
+                    : 'Отклонение'}
+                </span>
+                <span className="font-bold text-zinc-100 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 text-[11px]">
+                  {comparison.correctnessScore}% совпадение
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsCodeDiffOpen(!isCodeDiffOpen)}
+                  className="p-1 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition-colors"
+                >
+                  {isCodeDiffOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-300 font-sans leading-relaxed">
+              {comparison.verdict}
+            </p>
+
+            {/* Checklist of matching vs missing */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-1">
+                <span className="text-[10px] text-emerald-400 uppercase font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Совпадения с эталоном:
+                </span>
+                {comparison.matchingElements.length > 0 ? (
+                  <ul className="space-y-0.5 text-[11px] text-zinc-300">
+                    {comparison.matchingElements.map((el, i) => (
+                      <li key={i} className="flex items-center gap-1.5 text-zinc-300">
+                        <span className="text-emerald-400">✓</span> {el}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="text-[11px] text-zinc-500">Нет совпадений</span>
+                )}
+              </div>
+
+              <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-1">
+                <span className="text-[10px] text-amber-400 uppercase font-bold flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Пропуски / Отклонения:
+                </span>
+                {comparison.missingElements.length > 0 ? (
+                  <ul className="space-y-0.5 text-[11px] text-amber-300">
+                    {comparison.missingElements.map((el, i) => (
+                      <li key={i} className="flex items-center gap-1.5 text-amber-300">
+                        <span className="text-amber-400">⚠</span> {el}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="text-[11px] text-zinc-400">Все контрольные конструкции реализованы</span>
+                )}
+              </div>
+            </div>
+
+            {/* AI Anomalies Warning */}
+            {comparison.aiAnomalies.length > 0 && (
+              <div className="p-3 rounded-lg bg-red-950/30 border border-red-500/30 text-xs space-y-1">
+                <span className="text-[10px] text-red-400 uppercase font-bold flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  Обнаружены артефакты генерации нейросетей (ChatGPT):
+                </span>
+                <ul className="space-y-0.5 text-[11px] text-red-300">
+                  {comparison.aiAnomalies.map((anom, i) => (
+                    <li key={i}>• {anom}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Collapsible Side-by-side or Tabbed Code Viewer */}
+            {isCodeDiffOpen && (
+              <div className="pt-2 border-t border-zinc-800 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-500 font-mono text-[11px]">Просмотр исходного кода:</span>
+                  <div className="flex gap-1 bg-zinc-900 p-0.5 rounded border border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={() => setCodeViewTab('both')}
+                      className={`px-2 py-0.5 rounded text-[10px] ${
+                        codeViewTab === 'both' ? 'bg-zinc-800 text-zinc-100 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      Рядом
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCodeViewTab('student')}
+                      className={`px-2 py-0.5 rounded text-[10px] ${
+                        codeViewTab === 'student' ? 'bg-zinc-800 text-zinc-100 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      Код ученика
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCodeViewTab('benchmark')}
+                      className={`px-2 py-0.5 rounded text-[10px] ${
+                        codeViewTab === 'benchmark' ? 'bg-zinc-800 text-zinc-100 font-bold' : 'text-zinc-400 hover:text-zinc-200'
+                      }`}
+                    >
+                      Эталон учителя
+                    </button>
+                  </div>
+                </div>
+
+                <div className={`grid gap-3 ${codeViewTab === 'both' ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+                  {(codeViewTab === 'both' || codeViewTab === 'student') && (
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 overflow-hidden">
+                      <div className="px-3 py-1.5 bg-zinc-900 border-b border-zinc-800 text-[10px] text-zinc-400 font-mono flex items-center justify-between">
+                        <span className="text-zinc-200 font-semibold flex items-center gap-1.5">
+                          <Code2 className="w-3 h-3 text-blue-400" />
+                          Сданный код ученика ({submission?.studentName})
+                        </span>
+                        <span>{submission?.fileName || 'main.py'}</span>
+                      </div>
+                      <pre className="p-3 text-[11px] font-mono text-zinc-300 overflow-x-auto max-h-56 leading-relaxed">
+                        {submission?.codeSnippet || '# Код не загружен'}
+                      </pre>
+                    </div>
+                  )}
+
+                  {(codeViewTab === 'both' || codeViewTab === 'benchmark') && (
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 overflow-hidden">
+                      <div className="px-3 py-1.5 bg-zinc-900 border-b border-zinc-800 text-[10px] text-zinc-400 font-mono flex items-center justify-between">
+                        <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                          <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                          Эталонное решение учителя (Benchmark)
+                        </span>
+                        <span>reference.py</span>
+                      </div>
+                      <pre className="p-3 text-[11px] font-mono text-emerald-300/90 overflow-x-auto max-h-56 leading-relaxed">
+                        {assignment?.referenceCode || '# Эталон преподавателя не задан для этого задания'}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between text-xs text-zinc-500 pb-1 pt-2">
             <span className="uppercase">{t('oral_answer')} ({session.questions.length} вопроса)</span>
             <span>Запись: 20 сек лимит</span>
           </div>
