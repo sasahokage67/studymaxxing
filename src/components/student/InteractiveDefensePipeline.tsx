@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   FileCode,
@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { AIService, DefenseSessionVerdict, EvaluatedQuestionResult } from '../../services/aiService';
 import { SpeechService } from '../../services/speechService';
-import { DefenseQuestion, AIAnalysis } from '../../types';
+import { DefenseQuestion, AIAnalysis, Assignment } from '../../types';
 
 interface InteractiveDefensePipelineProps {
   initialAssignmentId?: string;
@@ -37,62 +37,31 @@ interface InteractiveDefensePipelineProps {
 
 type PipelineStage = 'code_upload' | 'ai_analyzing' | 'oral_defense' | 'verdict_report';
 
-const CODE_PRESETS = [
-  {
-    label: 'Python: Игра «Угадай число»',
-    assignmentId: 'asg_game',
-    fileName: 'guess_game.py',
-    code: `secret = 42
-
-print("Компьютер загадал число от 1 до 100!")
-
-while True:
-    guess = int(input("Введите число: "))
-    if guess == secret:
-        print("Поздравляю, вы угадали!")
-        break
-    elif guess < secret:
-        print("Загаданное число больше!")
-    else:
-        print("Загаданное число меньше!")`
-  },
-  {
-    label: 'Python: Простой калькулятор',
-    assignmentId: 'asg_calc',
-    fileName: 'calculator.py',
-    code: `a = float(input("Введите первое число: "))
-op = input("Выберите операцию (+, -, *, /): ")
-b = float(input("Введите второе число: "))
-
-if op == "+":
-    print("Результат:", a + b)
-elif op == "-":
-    print("Результат:", a - b)
-elif op == "*":
-    print("Результат:", a * b)
-elif op == "/":
-    if b != 0:
-        print("Результат:", a / b)
-    else:
-        print("Ошибка: делить на ноль нельзя!")
-else:
-    print("Неизвестная операция")`
-  },
-  {
-    label: 'Python: Подсчет четных чисел',
-    assignmentId: 'asg_even',
-    fileName: 'even_counter.py',
-    code: `numbers = [12, 5, 8, 19, 24, 7, 30]
-count = 0
-
-for num in numbers:
-    if num % 2 == 0:
-        print("Четное число:", num)
-        count = count + 1
-
-print("Всего четных чисел в списке:", count)`
+export const getAssignmentMeta = (asg?: Assignment) => {
+  if (!asg) {
+    return {
+      fileName: 'main.py',
+      starterCode: '# Напишите код программы на Python\n',
+      benchmarkCode: '# Решение задания\n'
+    };
   }
-];
+
+  let fileName = 'solution.py';
+  if (asg.grade === 5) fileName = 'greeting.py';
+  else if (asg.grade === 6) fileName = 'sum_numbers.py';
+  else if (asg.grade === 7) fileName = 'sign_check.py';
+  else if (asg.grade === 8) fileName = 'guess_game.py';
+  else if (asg.grade === 9) fileName = 'even_counter.py';
+  else if (asg.grade === 10) fileName = 'rectangle_area.py';
+  else if (asg.grade === 11) fileName = 'phone_book.py';
+  else if (asg.title.toLowerCase().includes('калькулятор')) fileName = 'calculator.py';
+
+  return {
+    fileName,
+    starterCode: asg.starterTemplate || `# ${asg.grade || ''} класс: ${asg.title}\n`,
+    benchmarkCode: asg.referenceCode || asg.starterTemplate || ''
+  };
+};
 
 export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProps> = ({
   initialAssignmentId,
@@ -101,17 +70,62 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
   const {
     currentUser,
     assignments,
+    selectedAssignmentId: contextAssignmentId,
+    selectAssignment,
     createSubmission,
     setCurrentView
   } = useApp();
 
+  const userGrade = currentUser.grade || 8;
+
+  // Filter assignments for student's grade/class
+  const myClassAssignments = useMemo(() => {
+    return assignments.filter(
+      (a) => a.grade === userGrade || (currentUser.classId && a.classId === currentUser.classId)
+    );
+  }, [assignments, userGrade, currentUser.classId]);
+
+  // Initial target assignment ID:
+  // Prop -> Context -> First assignment of student's class -> First assignment in list
+  const initialTargetId = useMemo(() => {
+    if (initialAssignmentId) return initialAssignmentId;
+    if (contextAssignmentId) return contextAssignmentId;
+    if (myClassAssignments.length > 0) return myClassAssignments[0].id;
+    return assignments[0]?.id || 'asg_grade_10';
+  }, [initialAssignmentId, contextAssignmentId, myClassAssignments, assignments]);
+
   const [stage, setStage] = useState<PipelineStage>('code_upload');
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState(
-    initialAssignmentId || assignments[0]?.id || 'asg_game'
-  );
-  const [fileName, setFileName] = useState('guess_game.py');
-  const [codeContent, setCodeContent] = useState(CODE_PRESETS[0].code);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>(initialTargetId);
+
+  const currentAssignment = useMemo(() => {
+    return assignments.find((a) => a.id === selectedAssignmentId) || myClassAssignments[0] || assignments[0];
+  }, [assignments, selectedAssignmentId, myClassAssignments]);
+
+  const initialMeta = useMemo(() => getAssignmentMeta(currentAssignment), [currentAssignment]);
+
+  const [fileName, setFileName] = useState(initialMeta.fileName);
+  const [codeContent, setCodeContent] = useState(initialMeta.starterCode);
+  const [showOtherGrades, setShowOtherGrades] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<AIAnalysis | null>(null);
+
+  const handleSelectAssignment = (asgId: string) => {
+    setSelectedAssignmentId(asgId);
+    selectAssignment(asgId);
+    const target = assignments.find((a) => a.id === asgId);
+    if (target) {
+      const meta = getAssignmentMeta(target);
+      setFileName(meta.fileName);
+      setCodeContent(meta.starterCode);
+    }
+  };
+
+  // Sync if context or prop changes externally
+  useEffect(() => {
+    const nextId = initialAssignmentId || contextAssignmentId;
+    if (nextId && nextId !== selectedAssignmentId) {
+      handleSelectAssignment(nextId);
+    }
+  }, [initialAssignmentId, contextAssignmentId]);
 
   // Analysis telemetry state
   const [analysisStep, setAnalysisStep] = useState(0);
@@ -167,17 +181,9 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
   useEffect(() => {
     const asg = assignments.find((a) => a.id === selectedAssignmentId);
     if (asg) {
-      if (asg.id === 'asg_game') {
-        setFileName('guess_game.py');
-        setCodeContent(asg.starterTemplate || CODE_PRESETS[0].code);
-      } else if (asg.id === 'asg_calc') {
-        setFileName('calculator.py');
-        setCodeContent(asg.starterTemplate || '');
-      } else {
-        const safeName = (asg.title || 'task').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20) || 'solution';
-        setFileName(`${safeName}.py`);
-        setCodeContent(asg.starterTemplate || `# Решение задания: ${asg.title}\n`);
-      }
+      const meta = getAssignmentMeta(asg);
+      setFileName(meta.fileName);
+      setCodeContent(meta.starterCode);
     }
   }, [selectedAssignmentId, assignments]);
 
@@ -198,13 +204,6 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
     }
     return () => clearInterval(timer);
   }, [stage, isAnswerStarted, secondsRemaining]);
-
-  // Code Preset Selector
-  const handleSelectPreset = (preset: typeof CODE_PRESETS[0]) => {
-    setSelectedAssignmentId(preset.assignmentId);
-    setFileName(preset.fileName);
-    setCodeContent(preset.code);
-  };
 
   // Local File Upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -421,99 +420,157 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
           {/* Left: Settings & Presets */}
           <div className="lg:col-span-5 space-y-5">
             <div className="border border-zinc-800 bg-zinc-950 p-5 rounded-xl space-y-4">
+              {/* Active Current Assignment Card */}
               <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                  1. Текущее задание курса:
-                </label>
-                <select
-                  value={selectedAssignmentId}
-                  onChange={(e) => setSelectedAssignmentId(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 font-sans"
-                >
-                  {assignments.map((asg) => (
-                    <option key={asg.id} value={asg.id}>
-                      {asg.title} ({asg.className})
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                    Текущее задание:
+                  </span>
+                  {currentAssignment.grade && (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      {currentAssignment.grade} класс
+                    </span>
+                  )}
+                </div>
 
-              {/* Assignment details & teacher benchmark badge */}
-              {(() => {
-                const asg = assignments.find((a) => a.id === selectedAssignmentId) || assignments[0];
-                return (
-                  <div className="p-3 rounded-lg bg-zinc-900/50 border border-zinc-800 space-y-2">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="text-zinc-400 font-sans font-medium line-clamp-1">{asg.title}</span>
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold ${
-                        asg.referenceCode
+                <div className="p-3.5 rounded-lg bg-zinc-900/60 border border-zinc-800 space-y-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-100 font-sans font-bold text-sm line-clamp-1">
+                      {currentAssignment.title}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold whitespace-nowrap ${
+                        currentAssignment.referenceCode
                           ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                           : 'bg-zinc-800 text-zinc-400'
-                      }`}>
-                        {asg.referenceCode ? '✓ Эталон учителя задан' : 'Без эталона'}
-                      </span>
-                    </div>
-
-                    <p className="text-[11px] text-zinc-400 font-sans line-clamp-2 leading-relaxed">
-                      {asg.description}
-                    </p>
-
-                    <div className="flex gap-2 pt-1 border-t border-zinc-800/80">
-                      {asg.starterTemplate && (
-                        <button
-                          type="button"
-                          onClick={() => setCodeContent(asg.starterTemplate!)}
-                          className="flex-1 py-1 px-2 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[10px] font-mono transition-colors text-center"
-                          title="Сбросить код до начального шаблона"
-                        >
-                          Заготовка задания
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => setCodeContent('')}
-                        className="py-1 px-3 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 text-[10px] font-mono transition-colors"
-                        title="Очистить поле для ввода"
-                      >
-                        Очистить
-                      </button>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              <div>
-                <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider mb-2">
-                  2. Все доступные задания курса (1 клик):
-                </label>
-                <div className="space-y-1.5">
-                  {assignments.map((asg) => (
-                    <button
-                      key={asg.id}
-                      type="button"
-                      onClick={() => setSelectedAssignmentId(asg.id)}
-                      className={`w-full text-left p-2.5 rounded-lg border text-xs transition-all cursor-pointer flex items-center justify-between ${
-                        selectedAssignmentId === asg.id
-                          ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300 font-semibold'
-                          : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700'
                       }`}
                     >
-                      <div className="flex items-center gap-2 truncate pr-2">
-                        <Code2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                        <span className="truncate">{asg.title}</span>
-                      </div>
-                      <span className="text-[9px] text-zinc-400 font-mono flex-shrink-0 flex items-center gap-1.5">
-                        {asg.grade && (
-                          <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-emerald-400 border border-emerald-500/20 font-semibold">
-                            {asg.grade} кл.
-                          </span>
-                        )}
-                        {asg.referenceCode && <span className="text-zinc-500">✓ Эталон</span>}
-                      </span>
+                      {currentAssignment.referenceCode ? '✓ Эталон задан' : 'Без эталона'}
+                    </span>
+                  </div>
+
+                  <div className="text-[11px] text-zinc-500 font-mono">
+                    {currentAssignment.className}
+                  </div>
+
+                  <p className="text-xs text-zinc-300 font-sans leading-relaxed">
+                    {currentAssignment.description}
+                  </p>
+
+                  <div className="flex gap-2 pt-2 border-t border-zinc-800/80">
+                    <button
+                      type="button"
+                      onClick={() => setCodeContent(getAssignmentMeta(currentAssignment).starterCode)}
+                      className="flex-1 py-1.5 px-2 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-mono transition-colors text-center cursor-pointer"
+                      title="Вставить заготовку кода для этого задания"
+                    >
+                      Заготовка
                     </button>
-                  ))}
+                    {currentAssignment.referenceCode && (
+                      <button
+                        type="button"
+                        onClick={() => setCodeContent(getAssignmentMeta(currentAssignment).benchmarkCode)}
+                        className="py-1.5 px-2.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-mono transition-colors text-center cursor-pointer"
+                        title="Вставить эталон учителя для быстрого теста"
+                      >
+                        Тест с эталоном
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setCodeContent('')}
+                      className="py-1.5 px-3 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 text-xs font-mono transition-colors cursor-pointer"
+                      title="Очистить поле для ввода"
+                    >
+                      Очистить
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* Tasks for Student's Class */}
+              <div className="pt-2 border-t border-zinc-800/80 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+                    Задания вашего {userGrade} класса:
+                  </span>
+                  <span className="text-[10px] text-emerald-400 font-mono">
+                    {myClassAssignments.length} задан.
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  {myClassAssignments.map((asg) => {
+                    const isSelected = selectedAssignmentId === asg.id;
+                    return (
+                      <button
+                        key={asg.id}
+                        type="button"
+                        onClick={() => handleSelectAssignment(asg.id)}
+                        className={`w-full text-left p-2.5 rounded-lg border text-xs transition-all cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300 font-semibold shadow-sm'
+                            : 'border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate pr-2">
+                          <Code2 className={`w-3.5 h-3.5 flex-shrink-0 ${isSelected ? 'text-emerald-400' : 'text-zinc-500'}`} />
+                          <span className="truncate">{asg.title}</span>
+                        </div>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-emerald-400 flex-shrink-0">
+                          {asg.grade} кл.
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Other Classes (Collapsible Archive) */}
+              {assignments.some((a: Assignment) => a.grade !== userGrade) && (
+                <div className="pt-2 border-t border-zinc-800/80">
+                  <button
+                    type="button"
+                    onClick={() => setShowOtherGrades(!showOtherGrades)}
+                    className="w-full flex items-center justify-between py-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+                  >
+                    <span>{showOtherGrades ? '▲ Скрыть задания других классов' : '▼ Показать задания других классов (5–11)'}</span>
+                    <span className="text-[10px] text-zinc-500 font-mono">
+                      {assignments.filter((a: Assignment) => a.grade !== userGrade).length} задан.
+                    </span>
+                  </button>
+
+                  {showOtherGrades && (
+                    <div className="space-y-1.5 mt-2 max-h-48 overflow-y-auto pr-1">
+                      {assignments
+                        .filter((a: Assignment) => a.grade !== userGrade)
+                        .map((asg: Assignment) => {
+                          const isSelected = selectedAssignmentId === asg.id;
+                          return (
+                            <button
+                              key={asg.id}
+                              type="button"
+                              onClick={() => handleSelectAssignment(asg.id)}
+                              className={`w-full text-left p-2 rounded-lg border text-xs transition-all cursor-pointer flex items-center justify-between ${
+                                isSelected
+                                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300 font-semibold'
+                                  : 'border-zinc-800/80 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 truncate pr-2">
+                                <Code2 className="w-3 h-3 text-zinc-500 flex-shrink-0" />
+                                <span className="truncate text-[11px]">{asg.title}</span>
+                              </div>
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 flex-shrink-0">
+                                {asg.grade} кл.
+                              </span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="pt-2 border-t border-zinc-800">
                 <input

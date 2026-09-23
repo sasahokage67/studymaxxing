@@ -15,7 +15,7 @@ import { ProfileModal } from './components/profile/ProfileModal';
 import { ShieldAlert } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const { currentView, currentRole, isAuthenticated, setCurrentView } = useApp();
+  const { currentView, currentRole, isAuthenticated, setCurrentView, selectedAssignmentId } = useApp();
 
   const isTeacherView = [
     'teacher_dashboard',
@@ -54,7 +54,7 @@ export const App: React.FC = () => {
       case 'student_defense':
       case 'student_submit':
       case 'student_pipeline':
-        return <InteractiveDefensePipeline />;
+        return <InteractiveDefensePipeline initialAssignmentId={selectedAssignmentId || undefined} />;
       case 'teacher_dashboard':
         return <TeacherDashboard />;
       case 'teacher_assignment_create':

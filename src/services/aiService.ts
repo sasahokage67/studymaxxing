@@ -243,13 +243,14 @@ export class AIService {
     const codeComparison = this.compareWithTeacherReference(code, referenceCode);
 
     // Heuristic AST-like code inspection for school programs (grades 5 to 11)
-    const isGreeting = fileName.includes('5') || fileName.includes('greet') || (code.includes('input') && (code.includes('Привет') || code.includes('зовут')));
-    const isSum = fileName.includes('6') || fileName.includes('sum') || (code.includes('a + b') && code.includes('int(input'));
-    const isSignCheck = fileName.includes('7') || fileName.includes('sign') || (code.includes('x > 0') && (code.includes('Положительное') || code.includes('Отрицательное')));
-    const isGuessGame = fileName.includes('8') || fileName.includes('guess') || code.includes('secret') || (code.includes('guess') && code.includes('input'));
-    const isEvenCounter = fileName.includes('9') || fileName.includes('even') || code.includes('% 2') || (code.includes('numbers') && code.includes('count'));
-    const isAreaFunc = fileName.includes('10') || fileName.includes('area') || code.includes('rectangle_area') || (code.includes('def ') && code.includes('w * h'));
-    const isPhoneBook = fileName.includes('11') || fileName.includes('contact') || fileName.includes('phone') || (code.includes('contacts') && code.includes('{'));
+    const asgId = submission.assignmentId || '';
+    const isGreeting = asgId === 'asg_grade_5' || fileName.includes('5') || fileName.includes('greet') || (code.includes('input') && (code.includes('Привет') || code.includes('зовут')));
+    const isSum = asgId === 'asg_grade_6' || fileName.includes('6') || fileName.includes('sum') || (code.includes('a + b') && code.includes('int(input'));
+    const isSignCheck = asgId === 'asg_calc' || fileName.includes('7') || fileName.includes('sign') || (code.includes('x > 0') && (code.includes('Положительное') || code.includes('Отрицательное')));
+    const isGuessGame = asgId === 'asg_game' || fileName.includes('8') || fileName.includes('guess') || code.includes('secret') || (code.includes('guess') && code.includes('input'));
+    const isEvenCounter = asgId === 'asg_grade_9' || fileName.includes('9') || fileName.includes('even') || code.includes('% 2') || (code.includes('numbers') && code.includes('count'));
+    const isAreaFunc = asgId === 'asg_grade_10' || fileName.includes('10') || fileName.includes('area') || code.includes('rectangle_area') || (code.includes('def ') && code.includes('w * h'));
+    const isPhoneBook = asgId === 'asg_grade_11' || fileName.includes('11') || fileName.includes('contact') || fileName.includes('phone') || (code.includes('contacts') && code.includes('{'));
     const isCalculator = fileName.includes('calc') || code.includes('float(input') || (code.includes('op ==') && code.includes('/'));
 
     const hasWhile = code.includes('while ') || code.includes('while(');

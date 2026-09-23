@@ -50,11 +50,15 @@ export const StudentDashboard: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setCurrentView('student_pipeline')}
+          onClick={() => {
+            const myAsg = assignments.find((a) => a.grade === userGrade || (currentUser.classId && a.classId === currentUser.classId)) || assignments[0];
+            if (myAsg) selectAssignment(myAsg.id);
+            setCurrentView('student_pipeline');
+          }}
           className="self-start sm:self-auto px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold flex items-center gap-2 transition-all font-mono shadow-md cursor-pointer"
         >
           <FileCode className="w-3.5 h-3.5" />
-          <span>Сдать код и пройти защиту</span>
+          <span>Сдать задание ({userGrade} класс)</span>
         </button>
       </div>
 
@@ -115,9 +119,20 @@ export const StudentDashboard: React.FC = () => {
 
       {/* Active Assignment Cards */}
       <div className="mb-10 space-y-4">
-        <div className="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-2">
-          <Clock className="w-3.5 h-3.5 text-zinc-400" />
-          <span>{t('active_defenses')}</span>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 text-zinc-400" />
+            <span>
+              {selectedGradeFilter === userGrade
+                ? `Задания для вашего ${userGrade} класса (назначено учителем)`
+                : `Задания ${selectedGradeFilter} класса`}
+            </span>
+          </div>
+          {selectedGradeFilter === userGrade && (
+            <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold font-mono">
+              Текущая программа вашего класса
+            </span>
+          )}
         </div>
 
         {filteredAssignments.length === 0 ? (
