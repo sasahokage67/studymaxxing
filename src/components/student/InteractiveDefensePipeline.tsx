@@ -342,6 +342,17 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
     }
   };
 
+  // Instant code token insertion helper for noisy environments or fast speech
+  const handleInsertTerm = (token: string) => {
+    if (!isAnswerStarted) {
+      handleStartQuestionAnswer();
+    }
+    const updated = spokenTranscript ? `${spokenTranscript} ${token}` : token;
+    const processed = SpeechService.processSpeech(updated);
+    setSpokenTranscript(processed.normalized);
+    setDetectedCodeTokens(processed.detectedTokens);
+  };
+
   return (
     <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 font-mono text-zinc-100">
       {/* Top Breadcrumb & Status */}
@@ -695,21 +706,52 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
                     </span>
                     <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold flex items-center gap-1">
                       <Sparkles className="w-2.5 h-2.5" />
-                      Phonetic Normalizer v2.4
+                      Phonetic Normalizer v2.6
                     </span>
                   </div>
 
-                  {spokenTranscript ? (
-                    <div className="space-y-2">
-                      <p className="text-zinc-100 font-mono text-xs sm:text-sm leading-relaxed bg-zinc-950/70 p-3 rounded-lg border border-zinc-800/80">
-                        {spokenTranscript}
-                      </p>
-                    </div>
-                  ) : (
-                    <span className="text-zinc-500 italic block py-2 text-xs">
-                      Слушаю вас... Говорите в микрофон своими словами (термины вроде «инт», «вайл», «брейк», «флоат» автоматически нормализуются в синтаксис Python).
+                  <div className="space-y-2">
+                    <textarea
+                      value={spokenTranscript}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSpokenTranscript(val);
+                        const processed = SpeechService.processSpeech(val);
+                        setDetectedCodeTokens(processed.detectedTokens);
+                      }}
+                      className="w-full bg-zinc-950 text-zinc-100 font-mono text-xs sm:text-sm leading-relaxed p-3 rounded-lg border border-zinc-800 focus:border-emerald-500/60 focus:outline-none resize-none transition-colors shadow-inner"
+                      rows={3}
+                      placeholder="Говорите в микрофон... Текст появится здесь автоматически с нормализацией Python (можно редактировать или вставлять термины по клику)"
+                    />
+                  </div>
+                </div>
+
+                {/* Instant Technical Syntax Chips for Noise-proof Recognition */}
+                <div className="pt-2 border-t border-zinc-800/80">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] text-zinc-400 font-mono font-semibold flex items-center gap-1">
+                      <Code2 className="w-3 h-3 text-emerald-400" />
+                      Быстрая вставка терминов (1 клик):
                     </span>
-                  )}
+                    <span className="text-[9px] text-zinc-500 font-mono">
+                      кликните если микрофон не расслышал
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {[
+                      'input()', 'int()', 'float()', 'while True', 'break',
+                      'print()', 'count += 1', 'b != 0', '% 2 == 0', 'if / elif', 'return'
+                    ].map((term) => (
+                      <button
+                        key={term}
+                        type="button"
+                        onClick={() => handleInsertTerm(term)}
+                        className="px-2 py-0.5 rounded bg-zinc-800/90 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/50 border border-zinc-700/60 text-zinc-300 font-mono text-[10px] font-medium transition-all cursor-pointer active:scale-95"
+                      >
+                        + {term}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Real-time Code Tokens Detected */}
@@ -717,7 +759,7 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
                   <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-zinc-800/70">
                     <span className="text-[10px] text-emerald-400 font-mono font-semibold flex items-center gap-1">
                       <Code2 className="w-3 h-3" />
-                      Токены кода:
+                      Токены кода в ответе:
                     </span>
                     {detectedCodeTokens.map((token, idx) => (
                       <span

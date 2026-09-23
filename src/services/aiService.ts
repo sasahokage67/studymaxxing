@@ -192,55 +192,150 @@ export class AIService {
         isRequired: true
       });
     } else {
-      // General simple school questions based on detected elements
-      summary = `Школьная программа (${fileName}): базовые переменные, условия и вывод результата.`;
-      concepts.push(
-        hasInput ? 'Пользовательский ввод через input()' : 'Инициализация переменных',
-        hasWhile ? 'Цикл while' : 'Линейное выполнение кода',
-        hasInt ? 'Приведение типов к числу int()' : 'Базовые типы данных',
-        hasPrint ? 'Вывод информации в консоль print()' : 'Вычисления'
-      );
+      // Deep dynamic AST-like code scanner for any custom Python file
+      const lines = code.split('\n').map((l, i) => ({ num: i + 1, text: l.trim() })).filter(l => l.text && !l.text.startsWith('#'));
+      
+      const inputLine = lines.find(l => l.text.includes('input('));
+      const loopLine = lines.find(l => l.text.startsWith('while ') || l.text.startsWith('for '));
+      const conditionLine = lines.find(l => l.text.startsWith('if ') || l.text.startsWith('elif '));
+      const breakLine = lines.find(l => l.text === 'break' || l.text.includes('break'));
+      const printLine = lines.find(l => l.text.includes('print('));
+      const funcLine = lines.find(l => l.text.startsWith('def '));
 
-      questions.push({
-        id: `q_${Date.now()}_1`,
-        defenseSessionId: '',
-        questionText: hasInput
-          ? 'Зачем в коде используется функция input() и что в нее вводит пользователь?'
-          : 'Объясните первую строчку вашего кода: какую переменную вы объявляете и какое значение ей присваиваете?',
-        skill: 'Базовый синтаксис',
-        difficulty: 'easy',
-        timeLimit: 15,
-        orderIndex: 1,
-        purpose: 'Проверяет осознание ввода данных и присваивания переменных.',
-        mustMention: ['ввод', 'пользователь', 'переменная', 'значение', 'клавиатура', 'input'],
-        isRequired: true
-      });
+      summary = `Школьный проект (${fileName}): анализ ключевых конструкций, функций и развилок логики.`;
+      
+      if (inputLine) {
+        concepts.push(`Строка ${inputLine.num}: пользовательский ввод input()`);
+        questions.push({
+          id: `q_${Date.now()}_1`,
+          defenseSessionId: '',
+          questionText: `В строке ${inputLine.num} у вас написано «${inputLine.text}». Зачем здесь функция input() и почему важно знать, какой тип данных она возвращает?`,
+          skill: 'Ввод и типы данных',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 1,
+          purpose: 'Проверяет знание функции input(), возвращаемого строкового типа str и приведения к числу int/float.',
+          mustMention: ['ввод', 'пользователь', 'строка', 'текст', 'тип', 'input', 'число', 'int'],
+          isRequired: true
+        });
+      } else if (funcLine) {
+        concepts.push(`Строка ${funcLine.num}: объявление функции def`);
+        questions.push({
+          id: `q_${Date.now()}_1`,
+          defenseSessionId: '',
+          questionText: `В строке ${funcLine.num} находится «${funcLine.text}». Что объявляет ключевое слово def и какие аргументы принимает функция?`,
+          skill: 'Функции',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 1,
+          purpose: 'Проверяет понимание сигнатуры функции, параметров и изоляции области видимости.',
+          mustMention: ['def', 'функция', 'параметры', 'аргументы', 'возврат', 'вызов'],
+          isRequired: true
+        });
+      } else {
+        concepts.push('Инициализация переменных и базовый синтаксис');
+        const firstLine = lines[0] || { num: 1, text: 'a = 0' };
+        questions.push({
+          id: `q_${Date.now()}_1`,
+          defenseSessionId: '',
+          questionText: `Объясните строку ${firstLine.num} («${firstLine.text}»): какую переменную вы создаете и для чего она понадобится в коде?`,
+          skill: 'Переменные и память',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 1,
+          purpose: 'Проверяет осознание назначения ключевой переменной.',
+          mustMention: ['переменная', 'значение', 'память', 'начало', 'хранить'],
+          isRequired: true
+        });
+      }
 
-      questions.push({
-        id: `q_${Date.now()}_2`,
-        defenseSessionId: '',
-        questionText: 'Какое условие проверяется в вашей программе и что произойдет, если оно выполнится?',
-        skill: 'Условия if/else',
-        difficulty: 'easy',
-        timeLimit: 15,
-        orderIndex: 2,
-        purpose: 'Проверяет понимание простой проверки условия.',
-        mustMention: ['условие', 'проверка', 'выполнится', 'if', 'else', 'результат'],
-        isRequired: true
-      });
+      if (loopLine) {
+        concepts.push(`Строка ${loopLine.num}: цикл ${loopLine.text.startsWith('while') ? 'while' : 'for'}`);
+        questions.push({
+          id: `q_${Date.now()}_2`,
+          defenseSessionId: '',
+          questionText: `В строке ${loopLine.num} («${loopLine.text}»): при каких условиях выполняется этот цикл и когда он завершится?`,
+          skill: 'Управление циклом',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 2,
+          purpose: 'Проверяет понимание условия продолжения и завершения цикла.',
+          mustMention: ['цикл', 'условие', 'пока', 'повтор', 'завершится', 'шаг', 'итерация', 'break'],
+          isRequired: true
+        });
+      } else if (conditionLine) {
+        concepts.push(`Строка ${conditionLine.num}: условное ветвление`);
+        questions.push({
+          id: `q_${Date.now()}_2`,
+          defenseSessionId: '',
+          questionText: `В строке ${conditionLine.num} у вас «${conditionLine.text}». Что произойдет, если это условие истинно, а что — если ложно?`,
+          skill: 'Ветвление логики',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 2,
+          purpose: 'Проверяет понимание логических операторов и перехода управления.',
+          mustMention: ['условие', 'истина', 'ложь', 'true', 'false', 'if', 'else', 'выполнится'],
+          isRequired: true
+        });
+      } else {
+        concepts.push('Алгоритмическая логика решения');
+        questions.push({
+          id: `q_${Date.now()}_2`,
+          defenseSessionId: '',
+          questionText: 'В чем заключается основной алгоритм вашей программы: какие вычисления производятся над данными?',
+          skill: 'Алгоритм',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 2,
+          purpose: 'Проверяет понимание смысла математических или логических операций.',
+          mustMention: ['вычисление', 'данные', 'результат', 'операция', 'формула'],
+          isRequired: true
+        });
+      }
 
-      questions.push({
-        id: `q_${Date.now()}_3`,
-        defenseSessionId: '',
-        questionText: 'Что выведет команда print() на экран в самом конце работы программы?',
-        skill: 'Вывод данных',
-        difficulty: 'easy',
-        timeLimit: 15,
-        orderIndex: 3,
-        purpose: 'Проверяет понимание итогового вывода программы.',
-        mustMention: ['выведет', 'print', 'экран', 'результат', 'ответ', 'сообщение'],
-        isRequired: true
-      });
+      if (breakLine) {
+        concepts.push(`Строка ${breakLine.num}: прерывание break`);
+        questions.push({
+          id: `q_${Date.now()}_3`,
+          defenseSessionId: '',
+          questionText: `Зачем в строке ${breakLine.num} используется инструкция break и что случится, если ее убрать?`,
+          skill: 'Управление потоком',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 3,
+          purpose: 'Проверяет понимание предотвращения зацикливания или немедленного выхода.',
+          mustMention: ['break', 'выход', 'остановить', 'прервать', 'зациклится', 'бесконечный'],
+          isRequired: true
+        });
+      } else if (printLine) {
+        concepts.push(`Строка ${printLine.num}: вывод информации print()`);
+        questions.push({
+          id: `q_${Date.now()}_3`,
+          defenseSessionId: '',
+          questionText: `В строке ${printLine.num} («${printLine.text}»): что именно увидит пользователь в терминале в результате работы?`,
+          skill: 'Вывод данных',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 3,
+          purpose: 'Проверяет понимание итогового пользовательского интерфейса и вывода консоли.',
+          mustMention: ['print', 'вывод', 'экран', 'консоль', 'терминал', 'результат', 'ответ'],
+          isRequired: true
+        });
+      } else {
+        concepts.push('Завершение работы программы');
+        questions.push({
+          id: `q_${Date.now()}_3`,
+          defenseSessionId: '',
+          questionText: 'Что произойдет, если пользователь передаст некорректные входные данные? Защищена ли программа?',
+          skill: 'Обработка исключений',
+          difficulty: 'easy',
+          timeLimit: 15,
+          orderIndex: 3,
+          purpose: 'Проверяет понимание граничных случаев и надежности кода.',
+          mustMention: ['ошибка', 'ввод', 'исключение', 'краш', 'проверка', 'защита'],
+          isRequired: true
+        });
+      }
     }
 
     const analysis: AIAnalysis = {
@@ -325,7 +420,15 @@ export class AIService {
     ];
 
     const hasIgnorance = IGNORANCE_TRIGGERS.some((trig) => clean.includes(trig));
-    const keywordsFound = (question.mustMention || []).filter((kw) => clean.includes(kw.toLowerCase()));
+
+    // Morphology-aware keyword checker: matches either exact substring or stem
+    const keywordsFound = (question.mustMention || []).filter((kw) => {
+      const kwLower = kw.toLowerCase().trim();
+      if (!kwLower) return false;
+      if (clean.includes(kwLower)) return true;
+      const stem = kwLower.slice(0, Math.max(3, kwLower.length - 2));
+      return clean.includes(stem);
+    });
 
     if (hasIgnorance && keywordsFound.length <= 1) {
       await new Promise((r) => setTimeout(r, 400));
@@ -407,30 +510,56 @@ export class AIService {
       }
     }
 
-    // ================= LAYER 5: ENHANCED LOCAL NEURAL-SEMANTIC ENGINE v2.4 =================
-    await new Promise((r) => setTimeout(r, 600));
+    // ================= LAYER 5: ENHANCED LOCAL NEURAL-SEMANTIC ENGINE v2.6 =================
+    await new Promise((r) => setTimeout(r, 450));
+
+    // Semantic concept clusters (handles Russian morphology: числа, чисел, строке, ввод, инпутом, etc.)
+    const STEM_GROUPS: Record<string, string[]> = {
+      input: ['инпут', 'импут', 'input', 'ввод', 'счит', 'клавиат', 'ввест', 'пользовател'],
+      number: ['числ', 'чисел', 'цифр', 'int', 'цел', 'значен', 'дроб', 'веществ', 'float'],
+      string: ['строк', 'текст', 'символ', 'str', 'букв'],
+      loop: ['цикл', 'вайл', 'while', 'фор', 'for', 'повтор', 'итерац', 'крут'],
+      break: ['брейк', 'брек', 'break', 'останов', 'прерв', 'заверш', 'выход', 'стоп', 'конч'],
+      compare: ['сравн', 'больш', 'меньш', 'равн', 'провер', 'услов', 'отлич'],
+      arithmetic: ['остаток', 'делен', 'четн', 'нечет', 'плюс', 'прибав', 'увелич', 'счетчик', 'count', 'умнож'],
+      error: ['ошибк', 'ноль', 'нулю', 'zero', 'делен', 'сбой', 'исключен', 'краш', 'слома']
+    };
+
+    // Detect matched concept groups
+    const matchedConceptGroups = Object.entries(STEM_GROUPS).filter(([_, stems]) =>
+      stems.some((stem) => clean.includes(stem))
+    ).map(([group]) => group);
 
     // Causal connectives indicating logical justification ("зачем?")
     const causalMarkers = [
       'чтобы', 'потому что', 'так как', 'для того', 'иначе', 'если', 'когда',
       'переводит', 'превращает', 'останавливает', 'прерывает', 'прибавляет',
-      'увеличивает', 'сравнивает', 'выводит', 'защищает'
+      'увеличивает', 'сравнивает', 'выводит', 'защищает', 'поскольку', 'затем'
     ];
     const causalHits = causalMarkers.filter((m) => clean.includes(m)).length;
 
     let overallScore = 30;
     let feedback = '';
 
-    if (keywordsFound.length >= 2 || (keywordsFound.length >= 1 && causalHits >= 1 && techHits >= 2)) {
-      // Confident, reasoned explanation -> 86-97% (Auto-passed)
-      overallScore = Math.floor(86 + Math.min(11, keywordsFound.length * 3 + causalHits * 2));
-      overallScore = Math.min(97, overallScore);
+    // Confident, reasoned explanation:
+    // e.g. "input возвращает текст, а int переводит в число чтобы сравнивать"
+    // (matches input, number, string clusters + causal marker)
+    const hasConceptPair = 
+      (matchedConceptGroups.includes('input') && (matchedConceptGroups.includes('number') || matchedConceptGroups.includes('string'))) ||
+      (matchedConceptGroups.includes('break') && matchedConceptGroups.includes('loop')) ||
+      (matchedConceptGroups.includes('compare') && (matchedConceptGroups.includes('number') || matchedConceptGroups.includes('loop'))) ||
+      (matchedConceptGroups.includes('arithmetic') && matchedConceptGroups.includes('number'));
+
+    if (keywordsFound.length >= 2 || (hasConceptPair && (causalHits >= 1 || techHits >= 2)) || (keywordsFound.length >= 1 && causalHits >= 1 && techHits >= 2)) {
+      // Confident, reasoned explanation -> 88-98% (Auto-passed)
+      overallScore = Math.floor(88 + Math.min(10, (keywordsFound.length + matchedConceptGroups.length) * 2 + causalHits * 2));
+      overallScore = Math.min(98, overallScore);
       feedback = 'Отличное, аргументированное объяснение: ученик четко раскрыл логику и причину использования конструкции в коде.';
-    } else if (keywordsFound.length === 1 || (techHits >= 2 && causalHits >= 1)) {
+    } else if (keywordsFound.length === 1 || hasConceptPair || (techHits >= 2 && causalHits >= 1)) {
       // Partial understanding -> 52-64% (Strictly <= 65%, requires teacher review)
       overallScore = Math.floor(52 + Math.random() * 12);
       feedback = 'Частичное понимание: ученик назвал правильный термин, но не раскрыл полную взаимосвязь или граничные условия. Требуется опрос учителя.';
-    } else if (techHits >= 1) {
+    } else if (techHits >= 1 || matchedConceptGroups.length >= 1) {
       // Superficial single-word guess -> 20-38%
       overallScore = Math.floor(20 + Math.random() * 18);
       feedback = 'Поверхностная догадка. Названы общие слова без понимания логики алгоритма.';
