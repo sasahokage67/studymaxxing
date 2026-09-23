@@ -35,13 +35,14 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
   // Mode: 'bulk_text' or 'select_existing'
   const [addMode, setAddMode] = useState<'bulk_text' | 'select_existing'>('bulk_text');
   
-  // Bulk names input
-  const [bulkNamesText, setBulkNamesText] = useState<string>(
-    'Алихан Сейдалиев\nДиана Рахимова\nНурлан Жусупов\nАйгерим Касымова\nТимур Ким'
+  // Bulk nicknames input
+  const [bulkNicknamesText, setBulkNicknamesText] = useState<string>(
+    '@student\n@arman_8a\n@daniyar_cs\n@kairat_code\n@aigerim_kz'
   );
 
-  // Selected existing student IDs
+  // Selected existing student IDs and search
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [searchExisting, setSearchExisting] = useState<string>('');
 
   // Created class state for success view
   const [createdClassData, setCreatedClassData] = useState<{
@@ -53,31 +54,42 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Parse bulk names
-  const parsedNames = bulkNamesText
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
+  // Parse bulk nicknames
+  const parsedNicknames = bulkNicknamesText
+    .split(/[\n, ]+/)
+    .map((l) => l.trim().replace(/^@/, ''))
+    .filter((l) => l.length > 0 && /^[a-zA-Z0-9_.-]+$/.test(l));
 
   // Existing students
   const existingStudents = users.filter((u) => u.role === 'student');
 
+  const filteredExistingStudents = existingStudents.filter((st) => {
+    if (!searchExisting.trim()) return true;
+    const q = searchExisting.trim().toLowerCase().replace(/^@/, '');
+    return st.username.toLowerCase().includes(q) || st.name.toLowerCase().includes(q);
+  });
+
   const handleFillDemo = () => {
-    setBulkNamesText(
-      'Алихан Сейдалиев\nДиана Рахимова\nНурлан Жусупов\nАйгерим Касымова\nТимур Ким\nДамир Омаров\nКамила Исмаилова'
+    setBulkNicknamesText(
+      '@student\n@arman_8a\n@daniyar_cs\n@kairat_code\n@aigerim_kz\n@timur_kim\n@diana_r'
     );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const studentsToCreate: { name: string; username?: string; password?: string }[] = [];
+    const studentsToCreate: { username: string; name?: string; password?: string }[] = [];
 
     if (addMode === 'bulk_text') {
-      parsedNames.forEach((fullName) => {
+      parsedNicknames.forEach((nick) => {
+        const cleanNick = nick.replace(/^@/, '').trim();
+        const existing = existingStudents.find(
+          (u) => u.username.toLowerCase().replace(/^@/, '') === cleanNick.toLowerCase()
+        );
         studentsToCreate.push({
-          name: fullName,
-          password: '12345678'
+          username: cleanNick,
+          name: existing ? existing.name : `@${cleanNick}`,
+          password: existing?.password || '12345678'
         });
       });
     } else {
@@ -85,8 +97,8 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
       const selectedUsers = existingStudents.filter((u) => selectedUserIds.includes(u.id));
       selectedUsers.forEach((u) => {
         studentsToCreate.push({
-          name: u.name,
           username: u.username,
+          name: u.name,
           password: u.password || '12345678'
         });
       });
@@ -104,31 +116,12 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
       studentsToCreate
     );
 
-    const ruToEn: Record<string, string> = {
-      а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'zh',
-      з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o',
-      п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts',
-      ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
-      ә: 'a', ғ: 'g', қ: 'q', ң: 'n', ө: 'o', ұ: 'u', ү: 'u', һ: 'h', і: 'i'
-    };
-
     // Prepare roster for teacher export
-    const rosterList = studentsToCreate.map((s, idx) => {
-      const transliterated = s.name
-        .toLowerCase()
-        .split('')
-        .map((char) => ruToEn[char] ?? char)
-        .join('')
-        .replace(/[^a-z0-9_.-]/g, '_')
-        .replace(/_+/g, '_')
-        .replace(/^_|_$/g, '')
-        .slice(0, 16);
-      return {
-        name: s.name,
-        username: s.username || `${transliterated || 'student'}_${grade}`,
-        password: s.password || '12345678'
-      };
-    });
+    const rosterList = studentsToCreate.map((s) => ({
+      name: s.name || `@${s.username}`,
+      username: s.username,
+      password: s.password || '12345678'
+    }));
 
     setCreatedClassData({
       newClass,
@@ -148,7 +141,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
       `Всего учеников: ${createdClassData.roster.length}`,
       '--------------------------------------------------',
       ...createdClassData.roster.map(
-        (st, i) => `${i + 1}. ${st.name} — Логин: ${st.username} | Пароль: ${st.password}`
+        (st, i) => `${i + 1}. @${st.username}${st.name && st.name !== '@' + st.username ? ` (${st.name})` : ''} — Логин: ${st.username} | Пароль: ${st.password}`
       ),
       '--------------------------------------------------',
       'Вход на платформу: https://studymaxxing.kz'
@@ -233,8 +226,8 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
                     <thead className="bg-zinc-900/40 border-b border-zinc-800 text-[10px] text-zinc-500 uppercase sticky top-0">
                       <tr>
                         <th className="py-2 px-3">№</th>
-                        <th className="py-2 px-3">Ученик (ФИО)</th>
-                        <th className="py-2 px-3">Логин</th>
+                        <th className="py-2 px-3">Никнейм (@username)</th>
+                        <th className="py-2 px-3">Имя / Профиль</th>
                         <th className="py-2 px-3">Пароль</th>
                         <th className="py-2 px-3">Статус</th>
                       </tr>
@@ -243,8 +236,8 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
                       {createdClassData.roster.map((st, idx) => (
                         <tr key={idx} className="hover:bg-zinc-900/30">
                           <td className="py-2 px-3 text-zinc-500">{idx + 1}</td>
+                          <td className="py-2 px-3 text-emerald-400 font-bold">@{st.username}</td>
                           <td className="py-2 px-3 font-sans font-medium text-zinc-200">{st.name}</td>
-                          <td className="py-2 px-3 text-emerald-400 font-bold">{st.username}</td>
                           <td className="py-2 px-3 text-zinc-400">{st.password}</td>
                           <td className="py-2 px-3">
                             <span className="px-1.5 py-0.5 rounded text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold uppercase">
@@ -375,7 +368,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-mono text-zinc-300 font-semibold uppercase tracking-wider flex items-center gap-1.5">
                     <GraduationCap className="w-4 h-4 text-emerald-400" />
-                    <span>2. Добавление учеников (Фулл класс)</span>
+                    <span>2. Зачисление учеников по никнеймам</span>
                   </label>
                   <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-0.5 text-[11px]">
                     <button
@@ -387,7 +380,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
                           : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
-                      Списком (Текст)
+                      Списком никнеймов
                     </button>
                     <button
                       type="button"
@@ -398,7 +391,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
                           : 'text-zinc-400 hover:text-zinc-200'
                       }`}
                     >
-                      Из зарегистрированных ({existingStudents.length})
+                      Выбрать из базы ({existingStudents.length})
                     </button>
                   </div>
                 </div>
@@ -406,53 +399,61 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
                 {addMode === 'bulk_text' ? (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-[11px] text-zinc-500">
-                      <span>Вставьте ФИО учеников (по одному в строке):</span>
+                      <span>Вставьте никнеймы учеников (по одному в строке, через пробел или запятую):</span>
                       <button
                         type="button"
                         onClick={handleFillDemo}
                         className="text-emerald-400 hover:underline cursor-pointer flex items-center gap-1"
                       >
                         <Sparkles className="w-3 h-3" />
-                        <span>Пример для 8 «А»</span>
+                        <span>Пример никнеймов</span>
                       </button>
                     </div>
 
                     <textarea
                       rows={5}
-                      value={bulkNamesText}
-                      onChange={(e) => setBulkNamesText(e.target.value)}
-                      placeholder="Иванов Иван&#10;Петров Петр&#10;Сидоров Сидор"
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-200 font-sans focus:outline-none focus:border-emerald-500 leading-relaxed resize-none"
+                      value={bulkNicknamesText}
+                      onChange={(e) => setBulkNicknamesText(e.target.value)}
+                      placeholder="@student&#10;@arman_8a&#10;@daniyar_cs&#10;kairat_code&#10;aigerim_kz"
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-200 font-mono focus:outline-none focus:border-emerald-500 leading-relaxed resize-none"
                     />
 
                     <div className="flex items-center justify-between text-[11px] text-zinc-400 bg-zinc-900/50 p-2.5 rounded-lg border border-zinc-800/80">
                       <span>
-                        Будет зарегистрировано:{' '}
-                        <strong className="text-emerald-400 font-mono">{parsedNames.length} учеников</strong>
+                        Будет зачислено:{' '}
+                        <strong className="text-emerald-400 font-mono">{parsedNicknames.length} учеников</strong>
                       </span>
                       <span className="text-zinc-500">
-                        Пароль по умолчанию: <strong className="text-zinc-300 font-mono">12345678</strong>
+                        Пароль для новых: <strong className="text-zinc-300 font-mono">12345678</strong>
                       </span>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <div className="text-[11px] text-zinc-500">
-                      Отметьте учеников, которых необходимо зачислить в этот класс:
+                    {/* Search filter for existing students */}
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-mono">@</span>
+                      <input
+                        type="text"
+                        value={searchExisting}
+                        onChange={(e) => setSearchExisting(e.target.value)}
+                        placeholder="Поиск по никнейму (@username)..."
+                        className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-7 pr-3 py-1.5 text-xs text-zinc-200 font-mono placeholder-zinc-600 focus:outline-none focus:border-emerald-500"
+                      />
                     </div>
 
-                    <div className="max-h-48 overflow-y-auto border border-zinc-800 rounded-lg bg-zinc-900/40 divide-y divide-zinc-800/60">
-                      {existingStudents.length === 0 ? (
-                        <div className="p-4 text-center text-xs text-zinc-500">
-                          Нет зарегистрированных учеников
+                    <div className="max-h-44 overflow-y-auto border border-zinc-800 rounded-lg bg-zinc-900/40 divide-y divide-zinc-800/60">
+                      {filteredExistingStudents.length === 0 ? (
+                        <div className="p-4 text-center text-xs text-zinc-500 font-mono">
+                          {searchExisting ? 'Ученик с таким никнеймом не найден' : 'Нет зарегистрированных учеников'}
                         </div>
                       ) : (
-                        existingStudents.map((st) => (
+                        filteredExistingStudents.map((st) => (
                           <label
                             key={st.id}
                             className="flex items-center justify-between p-2.5 hover:bg-zinc-900/70 cursor-pointer text-xs"
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2.5">
                               <input
                                 type="checkbox"
                                 checked={selectedUserIds.includes(st.id)}
@@ -465,8 +466,8 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
                                 }}
                                 className="rounded border-zinc-700 bg-zinc-900 text-emerald-500 focus:ring-emerald-500"
                               />
-                              <span className="font-sans font-medium text-zinc-200">{st.name}</span>
-                              <span className="text-[10px] text-zinc-500 font-mono">@{st.username}</span>
+                              <span className="font-mono font-bold text-emerald-400">@{st.username}</span>
+                              <span className="text-[11px] text-zinc-400 font-sans">({st.name})</span>
                             </div>
                             <span className="text-[10px] text-zinc-400 font-mono">
                               {st.grade ? `${st.grade} кл.` : 'Без класса'}
@@ -496,7 +497,7 @@ export const CreateClassModal: React.FC<CreateClassModalProps> = ({
                   <Plus className="w-4 h-4" />
                   <span>
                     Создать {grade} «{letter.toUpperCase()}» и добавить{' '}
-                    {addMode === 'bulk_text' ? parsedNames.length : selectedUserIds.length} учеников
+                    {addMode === 'bulk_text' ? parsedNicknames.length : selectedUserIds.length} учеников
                   </span>
                 </button>
               </div>

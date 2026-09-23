@@ -39,7 +39,8 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
   } = useApp();
 
   const [isAddingStudents, setIsAddingStudents] = useState(false);
-  const [newNamesText, setNewNamesText] = useState('');
+  const [newNicknamesText, setNewNicknamesText] = useState('');
+  const [singleNickInput, setSingleNickInput] = useState('');
   const [copied, setCopied] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -48,21 +49,29 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
   // Enrolled students in this class
   const classStudents = users.filter((u) => schoolClass.studentIds.includes(u.id));
 
+  const handleAddSingleNick = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanNick = singleNickInput.trim().replace(/^@/, '');
+    if (!cleanNick) return;
+    addStudentsToClass(schoolClass.id, [{ username: cleanNick, password: '12345678' }]);
+    setSingleNickInput('');
+  };
+
   const handleAddMoreSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const names = newNamesText
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
+    const nicks = newNicknamesText
+      .split(/[\n, ]+/)
+      .map((l) => l.trim().replace(/^@/, ''))
+      .filter((l) => l.length > 0 && /^[a-zA-Z0-9_.-]+$/.test(l));
 
-    if (names.length === 0) return;
+    if (nicks.length === 0) return;
 
     addStudentsToClass(
       schoolClass.id,
-      names.map((name) => ({ name, password: '12345678' }))
+      nicks.map((username) => ({ username, password: '12345678' }))
     );
 
-    setNewNamesText('');
+    setNewNicknamesText('');
     setIsAddingStudents(false);
   };
 
@@ -74,7 +83,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
       '--------------------------------------------------',
       ...classStudents.map(
         (st, idx) =>
-          `${idx + 1}. ${st.name} — Логин: ${st.username} | Пароль: ${st.password || '12345678'}`
+          `${idx + 1}. @${st.username}${st.name && st.name !== '@' + st.username ? ` (${st.name})` : ''} — Логин: ${st.username} | Пароль: ${st.password || '12345678'}`
       ),
       '--------------------------------------------------',
       'Вход на платформу: https://studymaxxing.kz'
@@ -198,47 +207,79 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
 
         {/* Modal Scrollable Content */}
         <div className="p-6 overflow-y-auto space-y-5 flex-1">
-          {/* Add more students drawer/form */}
-          {isAddingStudents && (
-            <form
-              onSubmit={handleAddMoreSubmit}
-              className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-3 animate-in fade-in duration-150"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-zinc-200 flex items-center gap-1.5">
-                  <UserPlus className="w-4 h-4 text-emerald-400" />
-                  <span>Добавление новых учеников в {schoolClass.name}</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsAddingStudents(false)}
-                  className="text-zinc-500 hover:text-zinc-300 text-xs"
-                >
-                  Скрыть
-                </button>
-              </div>
+          {/* Quick add single student by nickname + toggle bulk drawer */}
+          <div className="p-4 rounded-xl border border-zinc-800 bg-zinc-900/40 space-y-3">
+            <div className="flex items-center justify-between text-xs font-semibold text-zinc-300">
+              <span className="flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                <UserPlus className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Зачислить ученика по никнейму</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsAddingStudents(!isAddingStudents)}
+                className="text-emerald-400 hover:text-emerald-300 text-xs font-mono cursor-pointer transition-colors"
+              >
+                {isAddingStudents ? 'Скрыть массовый ввод' : '+ Зачислить списком (Bulk)'}
+              </button>
+            </div>
 
-              <textarea
-                rows={3}
-                value={newNamesText}
-                onChange={(e) => setNewNamesText(e.target.value)}
-                placeholder="Вставьте ФИО учеников по одному в строке, например:&#10;Айбек Сериков&#10;Мадина Смагулова"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-200 font-sans focus:outline-none focus:border-emerald-500 resize-none"
-              />
-
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-zinc-500">
-                  Будут сгенерированы учетные записи с паролем 12345678
-                </span>
-                <button
-                  type="submit"
-                  className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs cursor-pointer shadow-sm"
-                >
-                  Зачислить учеников
-                </button>
+            <form onSubmit={handleAddSingleNick} className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 font-mono text-xs">@</span>
+                <input
+                  type="text"
+                  value={singleNickInput}
+                  onChange={(e) => setSingleNickInput(e.target.value.replace(/[^a-zA-Z0-9_.-]/g, ''))}
+                  placeholder="Введите никнейм (например, arman_8a или student)"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-8 pr-3 py-2 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 font-mono"
+                />
               </div>
+              <button
+                type="submit"
+                disabled={!singleNickInput.trim()}
+                className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-zinc-950 font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Зачислить</span>
+              </button>
             </form>
-          )}
+
+            <p className="text-[11px] text-zinc-500 font-sans">
+              Если ученик с таким ником уже зарегистрирован, он будет прикреплен к классу. Если нет — для него создастся аккаунт с паролем 12345678.
+            </p>
+
+            {/* Bulk textarea drawer */}
+            {isAddingStudents && (
+              <form
+                onSubmit={handleAddMoreSubmit}
+                className="pt-3 border-t border-zinc-800/80 space-y-2.5 animate-in fade-in duration-150"
+              >
+                <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                  <span>Вставьте никнеймы учеников (по одному в строке или через пробел):</span>
+                </div>
+
+                <textarea
+                  rows={3}
+                  value={newNicknamesText}
+                  onChange={(e) => setNewNicknamesText(e.target.value)}
+                  placeholder="@arman_8a&#10;@kairat_code&#10;daniyar.kz&#10;student"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-200 font-mono focus:outline-none focus:border-emerald-500 resize-none leading-relaxed"
+                />
+
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-zinc-500">
+                    Пароль по умолчанию: <strong className="text-zinc-300 font-mono">12345678</strong>
+                  </span>
+                  <button
+                    type="submit"
+                    className="px-3.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs cursor-pointer shadow-sm"
+                  >
+                    Зачислить всех по списку
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
 
           {/* Enrolled Students Roster */}
           <div className="border border-zinc-800 bg-zinc-950 rounded-xl overflow-hidden">
@@ -257,7 +298,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                   onClick={() => setIsAddingStudents(true)}
                   className="text-emerald-400 hover:underline cursor-pointer ml-1"
                 >
-                  Добавить учеников списком
+                  Зачислить учеников по никнеймам
                 </button>
               </div>
             ) : (
@@ -266,8 +307,8 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                   <thead className="bg-zinc-900/30 border-b border-zinc-800 text-[10px] text-zinc-500 uppercase">
                     <tr>
                       <th className="py-2.5 px-4">№</th>
-                      <th className="py-2.5 px-4">Ученик (ФИО)</th>
-                      <th className="py-2.5 px-4">Логин</th>
+                      <th className="py-2.5 px-4">Никнейм (@username)</th>
+                      <th className="py-2.5 px-4">Имя / Профиль</th>
                       <th className="py-2.5 px-4">Пароль</th>
                       <th className="py-2.5 px-4">Сдано ДЗ</th>
                       <th className="py-2.5 px-4 text-right">Действия</th>
@@ -282,23 +323,23 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                       return (
                         <tr key={st.id} className="hover:bg-zinc-900/30 transition-colors">
                           <td className="py-3 px-4 text-zinc-500">{idx + 1}</td>
-                          <td className="py-3 px-4 font-sans font-medium text-zinc-200">
+                          <td className="py-3 px-4 font-bold text-emerald-400">
                             <div className="flex items-center gap-2.5">
                               <img
                                 src={
                                   st.avatarUrl ||
                                   'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=60&auto=format&fit=crop&q=80'
                                 }
-                                alt={st.name}
+                                alt={st.username}
                                 className="w-7 h-7 rounded-full object-cover border border-zinc-700 shrink-0"
                               />
-                              <div>
-                                <div className="text-zinc-200">{st.name}</div>
-                                <div className="text-[10px] text-zinc-500 font-mono">{st.email}</div>
-                              </div>
+                              <span className="text-emerald-300">@{st.username}</span>
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-emerald-400 font-bold">{st.username}</td>
+                          <td className="py-3 px-4 font-sans text-zinc-300">
+                            <div>{st.name || `@${st.username}`}</div>
+                            <div className="text-[10px] text-zinc-500 font-mono">{st.email}</div>
+                          </td>
                           <td className="py-3 px-4 text-zinc-400">{st.password || '12345678'}</td>
                           <td className="py-3 px-4">
                             <span className="px-2 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 font-semibold text-[10px]">

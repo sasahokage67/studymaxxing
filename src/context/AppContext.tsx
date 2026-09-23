@@ -54,9 +54,9 @@ interface AppContextType {
   updateUserGrade: (grade: number) => void;
   createClass: (
     classData: { grade: number; letter: string; name?: string; subject?: string; academicYear?: string },
-    students?: { name: string; username?: string; password?: string }[]
+    students?: { username?: string; name?: string; password?: string }[]
   ) => SchoolClass;
-  addStudentsToClass: (classId: string, students: { name: string; username?: string; password?: string }[]) => User[];
+  addStudentsToClass: (classId: string, students: { username?: string; name?: string; password?: string }[]) => User[];
   removeStudentFromClass: (classId: string, studentId: string) => void;
   deleteClass: (classId: string) => void;
   login: (username: string, password: string) => { success: boolean; error?: string };
@@ -443,7 +443,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const createClass = (
     classData: { grade: number; letter: string; name?: string; subject?: string; academicYear?: string },
-    students?: { name: string; username?: string; password?: string }[]
+    students?: { username?: string; name?: string; password?: string }[]
   ): SchoolClass => {
     const classGrade = classData.grade || 8;
     const classLetter = (classData.letter || 'А').toUpperCase().trim();
@@ -452,35 +452,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const createdStudentIds: string[] = [];
     const newUsersList: User[] = [];
+    const existingUsersToUpdate: User[] = [];
 
     if (students && students.length > 0) {
       students.forEach((s, idx) => {
-        const cleanName = s.name.trim();
-        if (!cleanName) return;
-        const baseUser = transliterate(cleanName) || `student_${classGrade}${classLetter.toLowerCase()}_${idx + 1}`;
-        const cleanUser = s.username ? s.username.trim() : `${baseUser}_${Date.now().toString().slice(-3)}`;
-        const studentId = `user_student_${Date.now()}_${idx + 1}`;
-        const newUser: User = {
-          id: studentId,
-          name: cleanName,
-          username: cleanUser,
-          password: s.password || '12345678',
-          role: 'student',
-          grade: classGrade,
-          classId,
-          className,
-          email: `${cleanUser}@school.kz`,
-          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-          school: currentUser.school || 'РФМШ г. Алматы'
-        };
-        createdStudentIds.push(studentId);
-        newUsersList.push(newUser);
+        const raw = (s.username || s.name || '').trim().replace(/^@/, '');
+        const cleanUser = raw.replace(/[^a-zA-Z0-9_.-]/g, '');
+        if (!cleanUser) return;
+
+        // Check if user already exists
+        const existing = users.find(
+          (u) => u.username.toLowerCase().replace(/^@/, '') === cleanUser.toLowerCase()
+        ) || newUsersList.find(
+          (u) => u.username.toLowerCase().replace(/^@/, '') === cleanUser.toLowerCase()
+        );
+
+        if (existing) {
+          createdStudentIds.push(existing.id);
+          existingUsersToUpdate.push({
+            ...existing,
+            classId,
+            className,
+            grade: classGrade
+          });
+        } else {
+          const studentId = `user_student_${Date.now()}_${idx + 1}`;
+          const displayName = s.name && s.name !== cleanUser && !s.name.startsWith('@') ? s.name : `@${cleanUser}`;
+          const newUser: User = {
+            id: studentId,
+            name: displayName,
+            username: cleanUser,
+            password: s.password || '12345678',
+            role: 'student',
+            grade: classGrade,
+            classId,
+            className,
+            email: `${cleanUser.toLowerCase()}@school.kz`,
+            avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+            school: currentUser.school || 'РФМШ г. Алматы'
+          };
+          createdStudentIds.push(studentId);
+          newUsersList.push(newUser);
+        }
       });
     }
 
-    if (newUsersList.length > 0) {
-      setUsers((prev) => [...newUsersList, ...prev]);
+    let updatedUsers = [...users];
+    if (existingUsersToUpdate.length > 0) {
+      const updateMap = new Map<string, User>(existingUsersToUpdate.map((u) => [u.id, u]));
+      updatedUsers = updatedUsers.map((u) => updateMap.get(u.id) || u);
     }
+    if (newUsersList.length > 0) {
+      updatedUsers = [...newUsersList, ...updatedUsers];
+    }
+    setUsers(updatedUsers);
+    localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
 
     const newClass: SchoolClass = {
       id: classId,
@@ -489,7 +515,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: className,
       subject: classData.subject || 'Информатика & Python',
       academicYear: classData.academicYear || '2026–2027',
-      studentIds: createdStudentIds,
+      studentIds: Array.from(new Set(createdStudentIds)),
       createdAt: new Date().toISOString()
     };
 
@@ -499,49 +525,79 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addStudentsToClass = (
     classId: string,
-    students: { name: string; username?: string; password?: string }[]
+    students: { username?: string; name?: string; password?: string }[]
   ): User[] => {
     const targetClass = classes.find((c) => c.id === classId);
     if (!targetClass) return [];
 
     const newUsersList: User[] = [];
     const addedIds: string[] = [];
+    const existingUsersToUpdate: User[] = [];
 
     students.forEach((s, idx) => {
-      const cleanName = s.name.trim();
-      if (!cleanName) return;
-      const baseUser = transliterate(cleanName) || `student_${targetClass.grade}_${idx + 1}`;
-      const cleanUser = s.username ? s.username.trim() : `${baseUser}_${Date.now().toString().slice(-4)}`;
-      const studentId = `user_student_${Date.now()}_${idx + 1}`;
-      const newUser: User = {
-        id: studentId,
-        name: cleanName,
-        username: cleanUser,
-        password: s.password || '12345678',
-        role: 'student',
-        grade: targetClass.grade,
-        classId: targetClass.id,
-        className: targetClass.name,
-        email: `${cleanUser}@school.kz`,
-        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
-        school: currentUser.school || 'РФМШ г. Алматы'
-      };
-      addedIds.push(studentId);
-      newUsersList.push(newUser);
+      const raw = (s.username || s.name || '').trim().replace(/^@/, '');
+      const cleanUser = raw.replace(/[^a-zA-Z0-9_.-]/g, '');
+      if (!cleanUser) return;
+
+      const existing = users.find(
+        (u) => u.username.toLowerCase().replace(/^@/, '') === cleanUser.toLowerCase()
+      ) || newUsersList.find(
+        (u) => u.username.toLowerCase().replace(/^@/, '') === cleanUser.toLowerCase()
+      );
+
+      if (existing) {
+        if (!targetClass.studentIds.includes(existing.id) && !addedIds.includes(existing.id)) {
+          addedIds.push(existing.id);
+        }
+        existingUsersToUpdate.push({
+          ...existing,
+          classId: targetClass.id,
+          className: targetClass.name,
+          grade: targetClass.grade
+        });
+      } else {
+        const studentId = `user_student_${Date.now()}_${idx + 1}`;
+        const displayName = s.name && s.name !== cleanUser && !s.name.startsWith('@') ? s.name : `@${cleanUser}`;
+        const newUser: User = {
+          id: studentId,
+          name: displayName,
+          username: cleanUser,
+          password: s.password || '12345678',
+          role: 'student',
+          grade: targetClass.grade,
+          classId: targetClass.id,
+          className: targetClass.name,
+          email: `${cleanUser.toLowerCase()}@school.kz`,
+          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+          school: currentUser.school || 'РФМШ г. Алматы'
+        };
+        addedIds.push(studentId);
+        newUsersList.push(newUser);
+      }
     });
 
+    let updatedUsers = [...users];
+    if (existingUsersToUpdate.length > 0) {
+      const updateMap = new Map<string, User>(existingUsersToUpdate.map((u) => [u.id, u]));
+      updatedUsers = updatedUsers.map((u) => updateMap.get(u.id) || u);
+    }
     if (newUsersList.length > 0) {
-      setUsers((prev) => [...newUsersList, ...prev]);
+      updatedUsers = [...newUsersList, ...updatedUsers];
+    }
+    setUsers(updatedUsers);
+    localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
+
+    if (addedIds.length > 0) {
       setClasses((prev) =>
         prev.map((c) =>
           c.id === classId
-            ? { ...c, studentIds: [...c.studentIds, ...addedIds] }
+            ? { ...c, studentIds: Array.from(new Set([...c.studentIds, ...addedIds])) }
             : c
         )
       );
     }
 
-    return newUsersList;
+    return [...newUsersList, ...existingUsersToUpdate];
   };
 
   const removeStudentFromClass = (classId: string, studentId: string) => {
