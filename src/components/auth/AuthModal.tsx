@@ -97,22 +97,17 @@ export const AuthModal: React.FC = () => {
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900/50">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono text-xs font-bold">
-              SM
-            </div>
-            <div>
-              <h3 className="font-mono text-sm font-semibold text-zinc-100 tracking-wide uppercase">
-                {tab === 'login' ? t('auth_login_title') : t('auth_register_title')}
-              </h3>
-              <p className="text-[11px] text-zinc-500 font-mono">
-                STUDYMAXXING // AUTH_GATE
-              </p>
-            </div>
+          <div>
+            <h3 className="font-mono text-sm font-semibold text-zinc-100 tracking-wide uppercase">
+              {tab === 'login' ? t('auth_login_title') : t('auth_register_title')}
+            </h3>
+            <p className="text-[11px] text-zinc-500 font-mono">
+              STUDYMAXXING // AUTH_GATE
+            </p>
           </div>
           <button
             onClick={closeAuthModal}
-            className="text-zinc-500 hover:text-zinc-300 p-1.5 rounded-lg hover:bg-zinc-800/80 transition-colors"
+            className="text-zinc-500 hover:text-zinc-300 p-1.5 rounded-lg hover:bg-zinc-800/80 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
