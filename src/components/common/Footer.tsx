@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { ShieldCheck, HelpCircle, FileText, X, CheckCircle2, ChevronRight, Lock, ExternalLink } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { t, setCurrentView, switchRole } = useApp();
+  const { t, setCurrentView } = useApp();
   
   const [activeModal, setActiveModal] = useState<'privacy' | 'faq' | 'protocol' | null>(null);
 

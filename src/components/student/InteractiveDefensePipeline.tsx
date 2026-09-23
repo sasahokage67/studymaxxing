@@ -169,14 +169,14 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
     if (asg) {
       if (asg.id === 'asg_game') {
         setFileName('guess_game.py');
-        setCodeContent(asg.referenceCode || CODE_PRESETS[0].code);
+        setCodeContent(asg.starterTemplate || CODE_PRESETS[0].code);
       } else if (asg.id === 'asg_calc') {
         setFileName('calculator.py');
-        setCodeContent(asg.starterTemplate || asg.referenceCode || CODE_PRESETS[1].code);
+        setCodeContent(asg.starterTemplate || '');
       } else {
         const safeName = (asg.title || 'task').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 20) || 'solution';
         setFileName(`${safeName}.py`);
-        setCodeContent(asg.starterTemplate || asg.referenceCode || `# Решение задания: ${asg.title}\n`);
+        setCodeContent(asg.starterTemplate || `# Решение задания: ${asg.title}\n`);
       }
     }
   }, [selectedAssignmentId, assignments]);
@@ -340,38 +340,6 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
     }
   };
 
-  // Quick 1-click test fill chips (for rapid pair-programming verification)
-  const handleQuickSpeechFill = (type: 'high' | 'mid' | 'zero') => {
-    if (!isAnswerStarted) {
-      handleStartQuestionAnswer();
-    }
-    if (type === 'high') {
-      let text = '';
-      if (fileName.includes('guess') || codeContent.includes('secret')) {
-        text = 'Функция input считывает строку, а int переводит ее в целое число, чтобы сравнивать со значением secret. Команда break сразу прерывает цикл while, когда игрок угадал число.';
-      } else if (fileName.includes('calc') || codeContent.includes('float')) {
-        text = 'Функция float переводит строку в число с плавающей точкой для вычислений, а проверка if b != 0 нужна, потому что в математике и в Python делить на ноль нельзя.';
-      } else {
-        text = 'Переменная count = 0 это начальный счетчик. Оператор num % 2 == 0 проверяет деление на два без остатка, и при четном числе мы прибавляем плюс один к счетчику.';
-      }
-      const processed = SpeechService.processSpeech(text);
-      setRawSpokenTranscript(text);
-      setSpokenTranscript(processed.normalized);
-      setDetectedCodeTokens(processed.detectedTokens);
-    } else if (type === 'mid') {
-      const text = 'Ну это переменная или счетчик, чтобы программа считала данные.';
-      const processed = SpeechService.processSpeech(text);
-      setRawSpokenTranscript(text);
-      setSpokenTranscript(processed.normalized);
-      setDetectedCodeTokens(processed.detectedTokens);
-    } else {
-      const text = 'Короче, я не знаю. Честно говоря, вообще без понятия, просто списал.';
-      setRawSpokenTranscript(text);
-      setSpokenTranscript(text);
-      setDetectedCodeTokens([]);
-    }
-  };
-
   // Instant code token insertion helper for noisy environments or fast speech
   const handleInsertTerm = (token: string) => {
     if (!isAnswerStarted) {
@@ -498,23 +466,13 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
                           className="flex-1 py-1 px-2 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[10px] font-mono transition-colors text-center"
                           title="Сбросить код до начального шаблона"
                         >
-                          Заготовка
-                        </button>
-                      )}
-                      {asg.referenceCode && (
-                        <button
-                          type="button"
-                          onClick={() => setCodeContent(asg.referenceCode!)}
-                          className="flex-1 py-1 px-2 rounded bg-emerald-500/15 border border-emerald-500/30 hover:bg-emerald-500/25 text-emerald-300 text-[10px] font-mono transition-colors text-center font-bold"
-                          title="Вставить правильный эталон для проверки работы алгоритма"
-                        >
-                          Эталон учителя
+                          Заготовка задания
                         </button>
                       )}
                       <button
                         type="button"
                         onClick={() => setCodeContent('')}
-                        className="py-1 px-2 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 text-[10px] font-mono transition-colors"
+                        className="py-1 px-3 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300 text-[10px] font-mono transition-colors"
                         title="Очистить поле для ввода"
                       >
                         Очистить
@@ -864,41 +822,12 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
                 </div>
               </div>
 
-              {/* Quick 1-click Test Simulation Chips for fast pair-programming verification */}
-              <div className="pt-2 border-t border-zinc-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 flex-wrap">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Тест:</span>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickSpeechFill('high')}
-                    className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-emerald-500/20 hover:text-emerald-300 text-zinc-300 transition-colors cursor-pointer"
-                    title="Вставить уверенный технический ответ (85%+)"
-                  >
-                    85%+ (Автозачет)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickSpeechFill('mid')}
-                    className="px-2 py-0.5 rounded bg-zinc-800 hover:bg-amber-500/20 hover:text-amber-300 text-zinc-300 transition-colors cursor-pointer"
-                    title="Вставить частичный ответ (55%)"
-                  >
-                    55% (Частичный)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickSpeechFill('zero')}
-                    className="px-2 py-0.5 rounded bg-red-950/50 border border-red-500/40 hover:bg-red-900/50 text-red-300 transition-colors cursor-pointer font-bold"
-                    title="Сказать «я не знаю» (СТРОГО 0% — отказ в зачете)"
-                  >
-                    0% («Не знаю»)
-                  </button>
-                </div>
-
+              {/* Actions */}
+              <div className="pt-2 border-t border-zinc-900 flex justify-end">
                 <button
                   type="button"
                   onClick={handleFinishQuestionAnswer}
-                  className="w-full sm:w-auto px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  className="w-full sm:w-auto px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
                 >
                   <Check className="w-4 h-4" />
                   <span>Завершить ответ</span>

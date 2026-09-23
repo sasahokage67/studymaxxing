@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { X, Lock, User as UserIcon, ShieldAlert, GraduationCap, School, Eye, EyeOff, Sparkles, CheckCircle2 } from 'lucide-react';
+import { X, Lock, User as UserIcon, ShieldAlert, Eye, EyeOff, CheckCircle2, GraduationCap } from 'lucide-react';
 import { UserRole } from '../../types';
 
 export const AuthModal: React.FC = () => {
@@ -41,12 +41,6 @@ export const AuthModal: React.FC = () => {
   }, [isAuthModalOpen, closeAuthModal]);
 
   if (!isAuthModalOpen) return null;
-
-  const handleFillCredentials = (presetUser: string, presetPass: string) => {
-    setUsername(presetUser);
-    setPassword(presetPass);
-    setError(null);
-  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,39 +136,6 @@ export const AuthModal: React.FC = () => {
 
         {/* Content body */}
         <div className="p-6 space-y-4">
-          {/* Quick preset credentials chips (highlighted for fast testing) */}
-          <div className="p-3 bg-zinc-900/70 border border-zinc-800/80 rounded-lg">
-            <div className="flex items-center gap-1.5 text-[11px] font-mono text-zinc-400 mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{t('auth_quick_accounts')}</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
-              <button
-                type="button"
-                onClick={() => handleFillCredentials('teacher', '12345678')}
-                className="flex items-center gap-2 px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/80 hover:border-emerald-500/60 rounded text-left transition-colors group"
-              >
-                <School className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <div className="truncate">
-                  <span className="text-zinc-200 font-semibold group-hover:text-emerald-400">teacher</span>
-                  <span className="text-[10px] text-zinc-500 ml-1.5">/ 12345678</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleFillCredentials('Nuradil M.', '12345678')}
-                className="flex items-center gap-2 px-2.5 py-1.5 bg-zinc-950 border border-zinc-700/80 hover:border-emerald-500/60 rounded text-left transition-colors group"
-              >
-                <GraduationCap className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <div className="truncate">
-                  <span className="text-zinc-200 font-semibold group-hover:text-emerald-400">Nuradil M.</span>
-                  <span className="text-[10px] text-zinc-500 ml-1.5">/ 12345678</span>
-                </div>
-              </button>
-            </div>
-          </div>
-
           {/* Error & Success alerts */}
           {error && (
             <div className="flex items-center gap-2.5 p-3 rounded-lg bg-red-950/40 border border-red-800/50 text-red-300 text-xs font-mono">
