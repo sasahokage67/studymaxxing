@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
   User,
   UserRole,
@@ -38,6 +38,7 @@ interface AppContextType {
   submissions: Submission[];
   defenseSessions: Record<string, DefenseSession>;
   classInsights: ClassInsight;
+  computeFilteredInsights: (classId?: string) => ClassInsight;
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: keyof typeof TRANSLATIONS['ru']) => string;
@@ -74,7 +75,7 @@ interface AppContextType {
   resetDemoData: () => void;
 }
 
-const STORAGE_DB_VERSION = 'lp_v5_sasahokage_reset';
+const STORAGE_DB_VERSION = 'lp_v6_real_data_only';
 
 // Automatic migration & reset on version change
 if (typeof window !== 'undefined') {
@@ -92,6 +93,89 @@ if (typeof window !== 'undefined') {
     console.error('Storage reset error:', e);
   }
 }
+
+/**
+ * Dynamically compute ClassInsight (weak skills and student concept heatmap)
+ * strictly from REAL student accounts and their actual completed defense sessions.
+ */
+export const computeClassInsights = (
+  users: User[],
+  defenseSessions: Record<string, DefenseSession>,
+  selectedClassId?: string
+): ClassInsight => {
+  const students = users.filter(
+    (u) =>
+      u.role === 'student' &&
+      (!selectedClassId || selectedClassId === 'all' || u.classId === selectedClassId)
+  );
+
+  const studentIdSet = new Set(students.map((s) => s.id));
+
+  const sessions = Object.values(defenseSessions).filter(
+    (ds) =>
+      studentIdSet.has(ds.studentId) &&
+      (ds.status === 'verified' || ds.status === 'teacher_review' || typeof ds.overallScore === 'number')
+  );
+
+  const skillScoresMap: Record<string, { total: number; count: number }> = {};
+  const heatmapRows: ClassInsight['conceptHeatmap'] = [];
+
+  students.forEach((st) => {
+    const stSessions = sessions.filter((s) => s.studentId === st.id);
+    if (stSessions.length === 0) return; // Only include students with real completed tests
+
+    const studentSkillTotals: Record<string, { total: number; count: number }> = {};
+
+    stSessions.forEach((ds) => {
+      ds.questions.forEach((q) => {
+        if (!q.skill) return;
+        const ans = ds.answers[q.id];
+        const score = ans?.evaluation?.overallScore ?? ds.overallScore;
+        if (typeof score === 'number') {
+          if (!studentSkillTotals[q.skill]) {
+            studentSkillTotals[q.skill] = { total: 0, count: 0 };
+          }
+          studentSkillTotals[q.skill].total += score;
+          studentSkillTotals[q.skill].count += 1;
+
+          if (!skillScoresMap[q.skill]) {
+            skillScoresMap[q.skill] = { total: 0, count: 0 };
+          }
+          skillScoresMap[q.skill].total += score;
+          skillScoresMap[q.skill].count += 1;
+        }
+      });
+    });
+
+    const studentScores: Record<string, number> = {};
+    Object.entries(studentSkillTotals).forEach(([skill, data]) => {
+      studentScores[skill] = Math.round(data.total / data.count);
+    });
+
+    const overallScore = Math.round(
+      stSessions.reduce((acc, s) => acc + (s.overallScore || 0), 0) / stSessions.length
+    );
+
+    heatmapRows.push({
+      studentId: st.id,
+      studentName: `${st.name} (@${st.username})`,
+      scores: studentScores,
+      overall: overallScore
+    });
+  });
+
+  const weakSkills = Object.entries(skillScoresMap)
+    .map(([skill, data]) => ({
+      skill,
+      score: Math.round(data.total / data.count)
+    }))
+    .sort((a, b) => a.score - b.score);
+
+  return {
+    weakSkills,
+    conceptHeatmap: heatmapRows
+  };
+};
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -230,7 +314,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : SEEDED_DEFENSE_SESSIONS;
   });
 
-  const [classInsights] = useState<ClassInsight>(SEEDED_CLASS_INSIGHTS);
+  const classInsights = useMemo<ClassInsight>(() => {
+    return computeClassInsights(users, defenseSessions);
+  }, [users, defenseSessions]);
+
+  const computeFilteredInsights = (classId?: string): ClassInsight => {
+    return computeClassInsights(users, defenseSessions, classId);
+  };
 
   useEffect(() => {
     localStorage.setItem('lp_users', JSON.stringify(users));
@@ -896,6 +986,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         submissions,
         defenseSessions,
         classInsights,
+        computeFilteredInsights,
         language,
         setLanguage,
         t,

@@ -478,60 +478,21 @@ export const SEEDED_DEFENSE_SESSIONS: Record<string, DefenseSession> = {
 
 export const SEEDED_CLASS_INSIGHTS: ClassInsight = {
   weakSkills: [
-    { skill: 'Базы данных (SQLite)', score: 54 },
-    { skill: 'Обработка ошибок (try/except)', score: 62 },
-    { skill: 'Словари и списки в памяти', score: 78 },
-    { skill: 'Игровые циклы и события', score: 82 },
-    { skill: 'Базовый синтаксис Python', score: 91 }
+    { skill: 'Ветвление логики', score: 89 },
+    { skill: 'Управление циклом', score: 92 },
+    { skill: 'Типы данных', score: 95 }
   ],
   conceptHeatmap: [
     {
-      studentId: 'user_student_1',
-      studentName: 'Арман Т. (10 «А»)',
+      studentId: 'user_student_arman',
+      studentName: 'Арман Ж. (@student)',
       scores: {
-        'Базовый синтаксис': 94,
-        'Словари и списки': 90,
-        'Базы данных': 75,
-        'Обработка ошибок': 85,
-        'Игровые циклы': 88
+        'Типы данных': 95,
+        'Управление циклом': 92,
+        'Ветвление логики': 89
       },
-      overall: 88
-    },
-    {
-      studentId: 'user_student_2',
-      studentName: 'Алия С. (10 «Б»)',
-      scores: {
-        'Базовый синтаксис': 74,
-        'Словари и списки': 60,
-        'Базы данных': 45,
-        'Обработка ошибок': 50,
-        'Игровые циклы': 68
-      },
-      overall: 62
-    },
-    {
-      studentId: 'user_student_3',
-      studentName: 'Даниэль К. (11 «А»)',
-      scores: {
-        'Базовый синтаксис': 98,
-        'Словари и списки': 95,
-        'Базы данных': 88,
-        'Обработка ошибок': 92,
-        'Игровые циклы': 90
-      },
-      overall: 93
-    },
-    {
-      studentId: 'user_student_4',
-      studentName: 'Мадина А. (9 «В»)',
-      scores: {
-        'Базовый синтаксис': 85,
-        'Словари и списки': 72,
-        'Базы данных': 50,
-        'Обработка ошибок': 64,
-        'Игровые циклы': 80
-      },
-      overall: 71
+      overall: 92
     }
   ]
 };
+

@@ -24,6 +24,7 @@ export const TeacherDashboard: React.FC = () => {
     assignments, 
     classes,
     users,
+    defenseSessions,
     setCurrentView, 
     selectDefenseSession, 
     selectSubmission,
@@ -49,6 +50,16 @@ export const TeacherDashboard: React.FC = () => {
 
   // Enrolled students total count
   const allStudents = users.filter((u) => u.role === 'student');
+
+  // Real dynamic metrics
+  const pendingReviewCount = submissions.filter((s) => s.status === 'teacher_review').length;
+
+  const verifiedSessions = Object.values(defenseSessions).filter(
+    (s) => typeof s.overallScore === 'number' && (s.status === 'verified' || s.status === 'teacher_review')
+  );
+  const avgMasteryScore = verifiedSessions.length > 0
+    ? Math.round(verifiedSessions.reduce((acc, s) => acc + (s.overallScore || 0), 0) / verifiedSessions.length)
+    : null;
 
   return (
     <div className="max-w-[1380px] mx-auto px-4 sm:px-8 py-8 font-mono">
@@ -111,14 +122,20 @@ export const TeacherDashboard: React.FC = () => {
 
         <div className="border border-zinc-800 bg-zinc-950 p-3.5 rounded-xl">
           <div className="text-zinc-500 text-[10px] uppercase">{t('pending_review')}</div>
-          <div className="text-2xl font-bold text-amber-400 mt-1">1</div>
-          <div className="text-[10px] text-amber-500/80 mt-0.5">Ждет проверки учителя</div>
+          <div className="text-2xl font-bold text-amber-400 mt-1">{pendingReviewCount}</div>
+          <div className="text-[10px] text-amber-500/80 mt-0.5">
+            {pendingReviewCount > 0 ? 'Ждет проверки учителя' : 'Все работы проверены'}
+          </div>
         </div>
 
         <div className="border border-zinc-800 bg-zinc-950 p-3.5 rounded-xl">
           <div className="text-zinc-500 text-[10px] uppercase">{t('avg_mastery')}</div>
-          <div className="text-2xl font-bold text-zinc-100 mt-1">84%</div>
-          <div className="text-[10px] text-emerald-400 mt-0.5">По устным ответам</div>
+          <div className="text-2xl font-bold text-zinc-100 mt-1">
+            {avgMasteryScore !== null ? `${avgMasteryScore}%` : '—'}
+          </div>
+          <div className="text-[10px] text-emerald-400 mt-0.5">
+            {avgMasteryScore !== null ? 'По реальным устным ответам' : 'Пока нет сданных защит'}
+          </div>
         </div>
       </div>
 
@@ -172,41 +189,56 @@ export const TeacherDashboard: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/80">
-                {submissions.map((sub) => {
-                  const asg = assignments.find((a) => a.id === sub.assignmentId);
-                  const score = sub.id === 'sub_arman_1' ? 88 : sub.id === 'sub_aliya_1' ? 62 : sub.id === 'sub_daniel_1' ? 93 : null;
+                {submissions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-zinc-500 font-sans text-xs">
+                      Пока нет отправленных решений. Ученики увидят свои задания в кабинете.
+                    </td>
+                  </tr>
+                ) : (
+                  submissions.map((sub) => {
+                    const asg = assignments.find((a) => a.id === sub.assignmentId);
+                    const session = sub.defenseSessionId ? defenseSessions[sub.defenseSessionId] : undefined;
+                    const score = session?.teacherReview?.overrideScore ?? session?.overallScore ?? null;
+                    const studentUser = users.find(
+                      (u) => u.id === sub.studentId || u.username.toLowerCase() === sub.studentName.toLowerCase().replace(/^@/, '')
+                    );
+                    const displayNick = studentUser ? `@${studentUser.username}` : sub.studentName;
 
-                  return (
-                    <tr key={sub.id} className="hover:bg-zinc-900/40 transition-colors">
-                      <td className="py-3 px-4 font-sans font-medium text-zinc-200">
-                        <div className="flex items-center gap-2">
-                          {asg?.grade && (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-emerald-400 border border-emerald-500/20">
-                              {asg.grade} кл.
+                    return (
+                      <tr key={sub.id} className="hover:bg-zinc-900/40 transition-colors">
+                        <td className="py-3 px-4 font-sans font-medium text-zinc-200">
+                          <div className="flex items-center gap-2">
+                            {asg?.grade && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-emerald-400 border border-emerald-500/20">
+                                {asg.grade} кл.
+                              </span>
+                            )}
+                            <span className="text-emerald-400 font-mono font-bold">{displayNick}</span>
+                            {studentUser?.name && studentUser.name !== displayNick && (
+                              <span className="text-zinc-400 font-sans text-xs font-normal">({studentUser.name})</span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-zinc-500 font-mono mt-0.5">{sub.studentEmail}</div>
+                        </td>
+
+                        <td className="py-3 px-4 text-zinc-400 font-sans">
+                          {asg?.title || 'Python: Задание'}
+                        </td>
+
+                        <td className="py-3 px-4 text-zinc-500 font-mono">
+                          {new Date(sub.submittedAt).toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' })}
+                        </td>
+
+                        <td className="py-3 px-4 font-mono">
+                          {score !== null ? (
+                            <span className={`font-bold ${score >= 80 ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                              {score}%
                             </span>
+                          ) : (
+                            <span className="text-zinc-600">—</span>
                           )}
-                          <span>{sub.studentName}</span>
-                        </div>
-                        <div className="text-[10px] text-zinc-500 font-mono mt-0.5">{sub.studentEmail}</div>
-                      </td>
-
-                      <td className="py-3 px-4 text-zinc-400 font-sans">
-                        {asg?.title || 'Python: Задание'}
-                      </td>
-
-                      <td className="py-3 px-4 text-zinc-500 font-mono">
-                        {new Date(sub.submittedAt).toLocaleDateString('ru-RU', { month: 'short', day: 'numeric' })}
-                      </td>
-
-                      <td className="py-3 px-4 font-mono">
-                        {score !== null ? (
-                          <span className={`font-bold ${score >= 80 ? 'text-emerald-400' : 'text-zinc-400'}`}>
-                            {score}%
-                          </span>
-                        ) : (
-                          <span className="text-zinc-600">—</span>
-                        )}
-                      </td>
+                        </td>
 
                       <td className="py-3 px-4">
                         <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-mono font-semibold ${
@@ -244,7 +276,8 @@ export const TeacherDashboard: React.FC = () => {
                       </td>
                     </tr>
                   );
-                })}
+                })
+              )}
               </tbody>
             </table>
           </div>

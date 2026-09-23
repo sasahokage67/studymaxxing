@@ -30,14 +30,12 @@ export const DefenseReviewDetail: React.FC = () => {
   const submission = submissions.find((s) => s.defenseSessionId === session.id) || submissions[0];
   const assignment = assignments.find((a) => a.id === session.assignmentId) || assignments[0];
 
-  const [overrideScore, setOverrideScore] = useState<number>(session.teacherReview?.overrideScore || session.overallScore || 88);
+  const [overrideScore, setOverrideScore] = useState<number>(session?.teacherReview?.overrideScore || session?.overallScore || 85);
   const [studentFeedback, setStudentFeedback] = useState<string>(
-    session.teacherReview?.studentFeedback || 
-    'Отличная защита, Арман! Ты прекрасно понимаешь, как работает словарь и почему память сбрасывается. На следующем уроке подключим к твоему боту базу данных SQLite.'
+    session?.teacherReview?.studentFeedback || ''
   );
   const [privateNote, setPrivateNote] = useState<string>(
-    session.teacherReview?.privateNote || 
-    'Код написал сам. Отвечал уверенно, без пауз. Твердая пятерка за проект.'
+    session?.teacherReview?.privateNote || ''
   );
   const [isSaved, setIsSaved] = useState(false);
   const [isCodeDiffOpen, setIsCodeDiffOpen] = useState(true);
