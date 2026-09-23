@@ -8,6 +8,17 @@ export interface School {
   isCustom?: boolean;
 }
 
+export interface SchoolClass {
+  id: string;
+  grade: number; // 5 - 11
+  letter: string; // e.g. "А", "Б", "В"
+  name: string; // e.g. "8 «А» класс"
+  subject: string; // e.g. "Информатика & Python"
+  academicYear: string; // e.g. "2026–2027"
+  studentIds: string[]; // List of user IDs in this class
+  createdAt: string;
+}
+
 export interface User {
   id: string;
   username: string;
@@ -19,6 +30,8 @@ export interface User {
   school?: string;
   schoolWebsite?: string;
   grade?: number; // 5, 6, 7, 8, 9, 10, 11
+  classId?: string;
+  className?: string;
 }
 
 export type SubmissionStatus = 

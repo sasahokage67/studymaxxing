@@ -1,4 +1,4 @@
-import { User, Assignment, Submission, DefenseSession, ClassInsight } from '../types';
+import { User, Assignment, Submission, DefenseSession, ClassInsight, SchoolClass } from '../types';
 
 export const SEEDED_USERS: User[] = [
   {
@@ -13,14 +13,16 @@ export const SEEDED_USERS: User[] = [
     schoolWebsite: 'https://ast.nis.edu.kz',
   },
   {
-    id: 'user_student_nuradil',
-    username: 'Nuradil M.',
+    id: 'user_student_arman',
+    username: 'student',
     password: '12345678',
-    name: 'Nuradil M.',
-    email: 'nuradil@studymaxxing.kz',
+    name: 'Арман Ж.',
+    email: 'arman.student@school.kz',
     role: 'student',
     grade: 8,
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+    classId: 'cls_cs_8',
+    className: '8 «А» класс',
+    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
     school: 'РФМШ г. Алматы',
     schoolWebsite: 'https://almaty.fizmat.kz',
   },
@@ -32,6 +34,8 @@ export const SEEDED_USERS: User[] = [
     email: 'aliya.student@school.kz',
     role: 'student',
     grade: 7,
+    classId: 'cls_cs_7',
+    className: '7 «Б» класс',
     avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80',
   },
   {
@@ -42,6 +46,8 @@ export const SEEDED_USERS: User[] = [
     email: 'daniel.student@school.kz',
     role: 'student',
     grade: 6,
+    classId: 'cls_cs_6',
+    className: '6 «А» класс',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
   },
   {
@@ -52,7 +58,72 @@ export const SEEDED_USERS: User[] = [
     email: 'madina.student@school.kz',
     role: 'student',
     grade: 9,
+    classId: 'cls_cs_9',
+    className: '9 «А» класс',
     avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80',
+  },
+];
+
+export const SEEDED_CLASSES: SchoolClass[] = [
+  {
+    id: 'cls_cs_8',
+    grade: 8,
+    letter: 'А',
+    name: '8 «А» класс',
+    subject: 'Информатика и основы Python',
+    academicYear: '2026–2027',
+    studentIds: ['user_student_arman'],
+    createdAt: '2026-09-01T08:00:00Z',
+  },
+  {
+    id: 'cls_cs_7',
+    grade: 7,
+    letter: 'Б',
+    name: '7 «Б» класс',
+    subject: 'Информатика и ветвления if/else',
+    academicYear: '2026–2027',
+    studentIds: ['user_student_2'],
+    createdAt: '2026-09-01T08:00:00Z',
+  },
+  {
+    id: 'cls_cs_6',
+    grade: 6,
+    letter: 'А',
+    name: '6 «А» класс',
+    subject: 'Основы программирования и числа',
+    academicYear: '2026–2027',
+    studentIds: ['user_student_3'],
+    createdAt: '2026-09-01T08:00:00Z',
+  },
+  {
+    id: 'cls_cs_9',
+    grade: 9,
+    letter: 'А',
+    name: '9 «А» класс',
+    subject: 'Списки, циклы и алгоритмы',
+    academicYear: '2026–2027',
+    studentIds: ['user_student_4'],
+    createdAt: '2026-09-01T08:00:00Z',
+  },
+  {
+    id: 'cls_cs_10',
+    grade: 10,
+    letter: 'А',
+    name: '10 «А» класс',
+    subject: 'Пользовательские функции и модули',
+    academicYear: '2026–2027',
+    studentIds: [],
+    createdAt: '2026-09-01T08:00:00Z',
+  },
+  {
+    id: 'cls_cs_11',
+    grade: 11,
+    letter: 'А',
+    name: '11 «А» класс',
+    subject: 'Структуры данных и словари',
+    academicYear: '2026–2027',
+    studentIds: [],
+    createdAt: '2026-09-01T08:00:00Z',
   },
 ];
 
@@ -258,12 +329,12 @@ export const SEEDED_SUBMISSIONS: Submission[] = [
   {
     id: 'sub_arman_1',
     assignmentId: 'asg_game',
-    studentId: 'user_student_nuradil',
-    studentName: 'Nuradil M.',
-    studentEmail: 'nuradil@studymaxxing.kz',
+    studentId: 'user_student_arman',
+    studentName: 'Арман Ж.',
+    studentEmail: 'arman.student@school.kz',
     submittedAt: '2026-09-22T14:20:00Z',
     fileName: 'guess_game.py',
-    githubUrl: 'https://github.com/nuradil-dev/guess-game',
+    githubUrl: 'https://github.com/arman-dev/guess-game',
     codeSnippet: `secret = 42
 
 print("Компьютер загадал число от 1 до 100!")
@@ -348,7 +419,7 @@ export const SEEDED_DEFENSE_SESSIONS: Record<string, DefenseSession> = {
   'def_arman_1': {
     id: 'def_arman_1',
     submissionId: 'sub_arman_1',
-    studentId: 'user_student_nuradil',
+    studentId: 'user_student_arman',
     assignmentId: 'asg_game',
     startedAt: '2026-09-22T14:25:00Z',
     completedAt: '2026-09-22T14:27:00Z',

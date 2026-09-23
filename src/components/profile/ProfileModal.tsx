@@ -25,10 +25,10 @@ import { getSavedSchools, saveCustomSchool } from '../../services/schoolData';
 
 const AVATAR_PRESETS = [
   { label: 'Преподаватель', url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=160&auto=format&fit=crop&q=80' },
-  { label: 'Ученик 1', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=160&auto=format&fit=crop&q=80' },
-  { label: 'Ученик 2', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80' },
+  { label: 'Нейтральный ученик', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160&auto=format&fit=crop&q=80' },
+  { label: 'Ученик', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80' },
   { label: 'Ученица', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=160&auto=format&fit=crop&q=80' },
-  { label: 'IT-Разработчик', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160&auto=format&fit=crop&q=80' },
+  { label: 'Разработчик', url: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=160&auto=format&fit=crop&q=80' },
 ];
 
 export const ProfileModal: React.FC = () => {

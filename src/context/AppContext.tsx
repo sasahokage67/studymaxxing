@@ -7,14 +7,16 @@ import {
   DefenseSession,
   ClassInsight,
   DefenseAnswer,
-  TeacherReview
+  TeacherReview,
+  SchoolClass
 } from '../types';
 import {
   SEEDED_USERS,
   SEEDED_ASSIGNMENTS,
   SEEDED_SUBMISSIONS,
   SEEDED_DEFENSE_SESSIONS,
-  SEEDED_CLASS_INSIGHTS
+  SEEDED_CLASS_INSIGHTS,
+  SEEDED_CLASSES
 } from '../services/mockData';
 import { AIService } from '../services/aiService';
 import { Language, TRANSLATIONS } from '../i18n/translations';
@@ -28,6 +30,7 @@ interface AppContextType {
   authModalTab: 'login' | 'register';
   authModalRole?: UserRole;
   users: User[];
+  classes: SchoolClass[];
   selectedAssignmentId: string | null;
   selectedSubmissionId: string | null;
   selectedDefenseSessionId: string | null;
@@ -49,6 +52,13 @@ interface AppContextType {
   updateUserAvatar: (avatarUrl: string) => void;
   updateUserSchool: (school: string, schoolWebsite?: string) => void;
   updateUserGrade: (grade: number) => void;
+  createClass: (
+    classData: { grade: number; letter: string; name?: string; subject?: string; academicYear?: string },
+    students?: { name: string; username?: string; password?: string }[]
+  ) => SchoolClass;
+  addStudentsToClass: (classId: string, students: { name: string; username?: string; password?: string }[]) => User[];
+  removeStudentFromClass: (classId: string, studentId: string) => void;
+  deleteClass: (classId: string) => void;
   login: (username: string, password: string) => { success: boolean; error?: string };
   register: (data: { username: string; password: string; name: string; role: UserRole; grade?: number }) => { success: boolean; error?: string };
   logout: () => void;
@@ -85,12 +95,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const cleaned = parsed.filter(
+            (u: User) => u.email !== 'nuradil@studymaxxing.kz' && u.username !== 'Nuradil M.'
+          );
+          const map = new Map<string, User>();
+          cleaned.forEach((u: User) => map.set(u.id, u));
+          SEEDED_USERS.forEach((su) => {
+            if (!map.has(su.id)) map.set(su.id, su);
+          });
+          return Array.from(map.values());
+        }
       } catch (e) {
         console.error(e);
       }
     }
     return SEEDED_USERS;
+  });
+
+  const [classes, setClasses] = useState<SchoolClass[]>(() => {
+    const saved = localStorage.getItem('lp_classes');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map<string, SchoolClass>();
+          parsed.forEach((c: SchoolClass) => map.set(c.id, c));
+          SEEDED_CLASSES.forEach((sc) => {
+            if (!map.has(sc.id)) map.set(sc.id, sc);
+          });
+          return Array.from(map.values());
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return SEEDED_CLASSES;
   });
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -106,7 +146,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('lp_current_user');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed.email === 'nuradil@studymaxxing.kz' || parsed.username === 'Nuradil M.') {
+          return SEEDED_USERS[1];
+        }
+        return parsed;
       } catch (e) {
         console.error(e);
       }
@@ -187,6 +231,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('lp_defense_sessions', JSON.stringify(defenseSessions));
   }, [defenseSessions]);
 
+  useEffect(() => {
+    localStorage.setItem('lp_classes', JSON.stringify(classes));
+  }, [classes]);
+
   const openAuthModal = (tab: 'login' | 'register' = 'login', defaultRole?: UserRole) => {
     setAuthModalTab(tab);
     if (defaultRole) setAuthModalRole(defaultRole);
@@ -255,11 +303,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: cleanName,
       role: data.role,
       grade: data.role === 'student' ? (data.grade || 8) : undefined,
-      email: `${cleanUser.toLowerCase().replace(/[^a-z0-9]/g, '_')}@studymaxxing.kz`,
+      email: `${cleanUser.toLowerCase().replace(/[^a-z0-9]/g, '_')}@school.kz`,
       avatarUrl:
         data.role === 'teacher'
           ? 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80'
-          : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
+          : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
     };
 
     const updated = [newUser, ...users];
@@ -335,6 +383,141 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updatedUsers = users.map((u) => (u.id === currentUser.id ? { ...u, grade } : u));
     setUsers(updatedUsers);
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
+  };
+
+  const transliterate = (str: string): string => {
+    const ruToEn: Record<string, string> = {
+      а: 'a', б: 'b', в: 'v', г: 'g', д: 'd', е: 'e', ё: 'yo', ж: 'zh',
+      з: 'z', и: 'i', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o',
+      п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts',
+      ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya',
+      ә: 'a', ғ: 'g', қ: 'q', ң: 'n', ө: 'o', ұ: 'u', ү: 'u', һ: 'h', і: 'i'
+    };
+    return str
+      .toLowerCase()
+      .split('')
+      .map((char) => ruToEn[char] ?? char)
+      .join('')
+      .replace(/[^a-z0-9]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_|_$/g, '');
+  };
+
+  const createClass = (
+    classData: { grade: number; letter: string; name?: string; subject?: string; academicYear?: string },
+    students?: { name: string; username?: string; password?: string }[]
+  ): SchoolClass => {
+    const classGrade = classData.grade || 8;
+    const classLetter = (classData.letter || 'А').toUpperCase().trim();
+    const className = classData.name || `${classGrade} «${classLetter}» класс`;
+    const classId = `cls_${Date.now()}`;
+
+    const createdStudentIds: string[] = [];
+    const newUsersList: User[] = [];
+
+    if (students && students.length > 0) {
+      students.forEach((s, idx) => {
+        const cleanName = s.name.trim();
+        if (!cleanName) return;
+        const baseUser = transliterate(cleanName) || `student_${classGrade}${classLetter.toLowerCase()}_${idx + 1}`;
+        const cleanUser = s.username ? s.username.trim() : `${baseUser}_${Date.now().toString().slice(-3)}`;
+        const studentId = `user_student_${Date.now()}_${idx + 1}`;
+        const newUser: User = {
+          id: studentId,
+          name: cleanName,
+          username: cleanUser,
+          password: s.password || '12345678',
+          role: 'student',
+          grade: classGrade,
+          classId,
+          className,
+          email: `${cleanUser}@school.kz`,
+          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+          school: currentUser.school || 'РФМШ г. Алматы'
+        };
+        createdStudentIds.push(studentId);
+        newUsersList.push(newUser);
+      });
+    }
+
+    if (newUsersList.length > 0) {
+      setUsers((prev) => [...newUsersList, ...prev]);
+    }
+
+    const newClass: SchoolClass = {
+      id: classId,
+      grade: classGrade,
+      letter: classLetter,
+      name: className,
+      subject: classData.subject || 'Информатика & Python',
+      academicYear: classData.academicYear || '2026–2027',
+      studentIds: createdStudentIds,
+      createdAt: new Date().toISOString()
+    };
+
+    setClasses((prev) => [newClass, ...prev]);
+    return newClass;
+  };
+
+  const addStudentsToClass = (
+    classId: string,
+    students: { name: string; username?: string; password?: string }[]
+  ): User[] => {
+    const targetClass = classes.find((c) => c.id === classId);
+    if (!targetClass) return [];
+
+    const newUsersList: User[] = [];
+    const addedIds: string[] = [];
+
+    students.forEach((s, idx) => {
+      const cleanName = s.name.trim();
+      if (!cleanName) return;
+      const baseUser = transliterate(cleanName) || `student_${targetClass.grade}_${idx + 1}`;
+      const cleanUser = s.username ? s.username.trim() : `${baseUser}_${Date.now().toString().slice(-4)}`;
+      const studentId = `user_student_${Date.now()}_${idx + 1}`;
+      const newUser: User = {
+        id: studentId,
+        name: cleanName,
+        username: cleanUser,
+        password: s.password || '12345678',
+        role: 'student',
+        grade: targetClass.grade,
+        classId: targetClass.id,
+        className: targetClass.name,
+        email: `${cleanUser}@school.kz`,
+        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+        school: currentUser.school || 'РФМШ г. Алматы'
+      };
+      addedIds.push(studentId);
+      newUsersList.push(newUser);
+    });
+
+    if (newUsersList.length > 0) {
+      setUsers((prev) => [...newUsersList, ...prev]);
+      setClasses((prev) =>
+        prev.map((c) =>
+          c.id === classId
+            ? { ...c, studentIds: [...c.studentIds, ...addedIds] }
+            : c
+        )
+      );
+    }
+
+    return newUsersList;
+  };
+
+  const removeStudentFromClass = (classId: string, studentId: string) => {
+    setClasses((prev) =>
+      prev.map((c) =>
+        c.id === classId
+          ? { ...c, studentIds: c.studentIds.filter((id) => id !== studentId) }
+          : c
+      )
+    );
+  };
+
+  const deleteClass = (classId: string) => {
+    setClasses((prev) => prev.filter((c) => c.id !== classId));
   };
 
   const logout = () => {
@@ -610,6 +793,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         authModalTab,
         authModalRole,
         users,
+        classes,
         selectedSubmissionId,
         selectedDefenseSessionId,
         assignments,
@@ -630,6 +814,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateUserAvatar,
         updateUserSchool,
         updateUserGrade,
+        createClass,
+        addStudentsToClass,
+        removeStudentFromClass,
+        deleteClass,
         login,
         register,
         logout,

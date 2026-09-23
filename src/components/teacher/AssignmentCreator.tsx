@@ -3,11 +3,12 @@ import { useApp } from '../../context/AppContext';
 import { ArrowLeft, CheckCircle2, ShieldCheck, Sparkles, Code2 } from 'lucide-react';
 
 export const AssignmentCreator: React.FC = () => {
-  const { createAssignment, setCurrentView, t } = useApp();
+  const { createAssignment, setCurrentView, classes, t } = useApp();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [grade, setGrade] = useState<number>(8);
+  const [selectedClassId, setSelectedClassId] = useState<string>(classes[0]?.id || '');
   const [submissionType, setSubmissionType] = useState<'github' | 'code' | 'pdf'>('code');
   const [questionCount, setQuestionCount] = useState<number>(3);
   const [answerMode, setAnswerMode] = useState<'voice_or_text' | 'voice_only' | 'text_only'>('voice_or_text');
@@ -22,11 +23,15 @@ export const AssignmentCreator: React.FC = () => {
     e.preventDefault();
     if (!title.trim()) return;
 
+    const targetClass = classes.find((c) => c.id === selectedClassId);
+    const finalGrade = targetClass ? targetClass.grade : grade;
+
     createAssignment({
       title,
       description,
-      grade,
-      className: `Информатика ${grade} «А» класс`,
+      grade: finalGrade,
+      classId: targetClass ? targetClass.id : `cls_cs_${finalGrade}`,
+      className: targetClass ? targetClass.name : `Информатика ${finalGrade} «А» класс`,
       submissionType,
       questionCount,
       answerMode,
@@ -64,10 +69,41 @@ export const AssignmentCreator: React.FC = () => {
             1. General Assignment Details
           </h2>
 
+          {/* Target Class Picker from created classes */}
+          {classes.length > 0 && (
+            <div>
+              <label className="block text-xs font-mono text-zinc-400 mb-1.5 flex items-center justify-between">
+                <span>ВЫБЕРИТЕ КЛАСС ШКОЛЫ:</span>
+                <span className="text-emerald-400 font-semibold">
+                  {classes.find((c) => c.id === selectedClassId)?.name || 'Не выбран'}
+                </span>
+              </label>
+              <div className="flex gap-2 flex-wrap">
+                {classes.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedClassId(c.id);
+                      setGrade(c.grade);
+                    }}
+                    className={`py-1.5 px-3 rounded-lg border text-xs font-mono font-medium transition-all cursor-pointer ${
+                      selectedClassId === c.id
+                        ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 font-bold'
+                        : 'border-white/10 bg-zinc-950 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                    }`}
+                  >
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Target Grade Selector (5-11) */}
           <div>
             <label className="block text-xs font-mono text-zinc-400 mb-1.5 flex items-center justify-between">
-              <span>ЦЕЛЕВОЙ КЛАСС (5–11 КЛАСС):</span>
+              <span>ИЛИ ВЫБЕРИТЕ ПАРАЛЛЕЛЬ (5–11 КЛАСС):</span>
               <span className="text-emerald-400 font-semibold">{grade} класс</span>
             </label>
             <div className="grid grid-cols-7 gap-1.5">
@@ -75,7 +111,11 @@ export const AssignmentCreator: React.FC = () => {
                 <button
                   key={g}
                   type="button"
-                  onClick={() => setGrade(g)}
+                  onClick={() => {
+                    setGrade(g);
+                    const matchingClass = classes.find((c) => c.grade === g);
+                    if (matchingClass) setSelectedClassId(matchingClass.id);
+                  }}
                   className={`py-2 text-center rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
                     grade === g
                       ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-sm'
