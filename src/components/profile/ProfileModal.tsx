@@ -283,8 +283,6 @@ export const ProfileModal: React.FC = () => {
 
               <div className="flex items-center gap-2.5 mt-1.5 text-xs font-mono text-zinc-400 flex-wrap">
                 <span className="text-zinc-300 font-semibold">@{currentUser.username}</span>
-                <span className="text-zinc-600">•</span>
-                <span className="text-zinc-400">{currentUser.email}</span>
               </div>
 
               {/* Quick Avatar Controls Row */}

@@ -338,8 +338,7 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                             </div>
                           </td>
                           <td className="py-3 px-4 font-sans text-zinc-300">
-                            <div>{st.name || `@${st.username}`}</div>
-                            <div className="text-[10px] text-zinc-500 font-mono">{st.email}</div>
+                            <div className="font-medium text-zinc-200">{st.name || `@${st.username}`}</div>
                           </td>
                           <td className="py-3 px-4 text-zinc-400">{st.password || '12345678'}</td>
                           <td className="py-3 px-4">

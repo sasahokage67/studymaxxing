@@ -206,6 +206,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (hasSasahokage) {
             return parsed.map((u: User) => ({
               ...u,
+              email: '',
               avatarUrl: sanitizeAvatarUrl(
                 u.avatarUrl,
                 u.username,
@@ -265,6 +266,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return {
           ...parsed,
+          email: '',
           avatarUrl: sanitizeAvatarUrl(
             parsed.avatarUrl,
             parsed.username,
@@ -450,7 +452,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       className: undefined,
       school: data.role === 'teacher' ? 'НИШ ФМН г. Астана' : undefined,
       schoolWebsite: data.role === 'teacher' ? 'https://ast.nis.edu.kz' : undefined,
-      email: `${cleanUser.toLowerCase().replace(/[^a-z0-9_.-]/g, '_')}@school.kz`,
+      email: '',
       avatarUrl: getNeutralAvatarUrl(
         cleanUser,
         data.role === 'teacher' ? 'shapes' : 'identicon'
@@ -605,7 +607,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             grade: classGrade,
             classId,
             className,
-            email: `${cleanUser.toLowerCase()}@school.kz`,
+            email: '',
             avatarUrl: getNeutralAvatarUrl(cleanUser, 'identicon'),
             school: currentUser.school || 'НИШ ФМН г. Астана',
             schoolWebsite: currentUser.schoolWebsite || 'https://ast.nis.edu.kz'
@@ -694,7 +696,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           grade: targetClass.grade,
           classId: targetClass.id,
           className: targetClass.name,
-          email: `${cleanUser.toLowerCase()}@school.kz`,
+          email: '',
           avatarUrl: getNeutralAvatarUrl(cleanUser, 'identicon'),
           school: currentUser.school || 'НИШ ФМН г. Астана',
           schoolWebsite: currentUser.schoolWebsite || 'https://ast.nis.edu.kz'
