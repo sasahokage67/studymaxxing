@@ -74,6 +74,25 @@ interface AppContextType {
   resetDemoData: () => void;
 }
 
+const STORAGE_DB_VERSION = 'lp_v5_sasahokage_reset';
+
+// Automatic migration & reset on version change
+if (typeof window !== 'undefined') {
+  try {
+    const currentVersion = localStorage.getItem('lp_storage_version');
+    if (currentVersion !== STORAGE_DB_VERSION) {
+      localStorage.removeItem('lp_users');
+      localStorage.removeItem('lp_current_user');
+      localStorage.removeItem('lp_auth');
+      localStorage.removeItem('lp_submissions');
+      localStorage.removeItem('lp_defense_sessions');
+      localStorage.setItem('lp_storage_version', STORAGE_DB_VERSION);
+    }
+  } catch (e) {
+    console.error('Storage reset error:', e);
+  }
+}
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -96,20 +115,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const cleaned = parsed.filter(
-            (u: User) => u.email !== 'nuradil@studymaxxing.kz' && u.username !== 'Nuradil M.'
+          const hasSasahokage = parsed.some(
+            (u: User) => u.username.toLowerCase() === 'sasahokage'
           );
-          const map = new Map<string, User>();
-          cleaned.forEach((u: User) => map.set(u.id, u));
-          SEEDED_USERS.forEach((su) => {
-            if (!map.has(su.id)) map.set(su.id, su);
-          });
-          return Array.from(map.values());
+          if (hasSasahokage) {
+            return parsed;
+          }
         }
       } catch (e) {
         console.error(e);
       }
     }
+    localStorage.setItem('lp_users', JSON.stringify(SEEDED_USERS));
     return SEEDED_USERS;
   });
 
@@ -147,8 +164,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed.email === 'nuradil@studymaxxing.kz' || parsed.username === 'Nuradil M.') {
-          return SEEDED_USERS[1];
+        if (
+          parsed.email === 'nuradil@studymaxxing.kz' ||
+          parsed.username === 'Nuradil M.' ||
+          parsed.username === 'teacher'
+        ) {
+          return SEEDED_USERS[0];
         }
         return parsed;
       } catch (e) {
@@ -246,11 +267,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const login = (username: string, password: string): { success: boolean; error?: string } => {
-    const cleanUser = username.trim().toLowerCase();
+    // Strip leading @, lowercase and trim for comparison
+    const cleanUser = username.trim().toLowerCase().replace(/^@/, '');
     const cleanPass = password.trim();
 
     const found = users.find((u) => {
-      const match = u.username.toLowerCase() === cleanUser || u.name.toLowerCase() === cleanUser;
+      const uUsername = u.username.toLowerCase().replace(/^@/, '');
+      const match =
+        uUsername === cleanUser ||
+        u.username.toLowerCase() === cleanUser ||
+        u.name.toLowerCase() === cleanUser ||
+        u.email.toLowerCase() === cleanUser;
       return match && u.password === cleanPass;
     });
 
@@ -280,7 +307,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     role: UserRole;
     grade?: number;
   }): { success: boolean; error?: string } => {
-    const cleanUser = data.username.trim();
+    const cleanUser = data.username.trim().replace(/^@/, '');
     const cleanPass = data.password.trim();
     const cleanName = data.name.trim() || cleanUser;
 
@@ -288,8 +315,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, error: t('auth_err_fill_all') };
     }
 
+    // Only English characters, numbers, and _, ., - (no spaces, no cyrillic, 3-30 chars)
+    const USERNAME_REGEX = /^[a-zA-Z0-9_.-]{3,30}$/;
+    if (!USERNAME_REGEX.test(cleanUser)) {
+      return {
+        success: false,
+        error:
+          (t as (k: string) => string)('auth_username_invalid') ||
+          'Никнейм должен содержать от 3 символов: только английские буквы, цифры, _, . и - без пробелов'
+      };
+    }
+
     const exists = users.some(
-      (u) => u.username.toLowerCase() === cleanUser.toLowerCase()
+      (u) => u.username.toLowerCase().replace(/^@/, '') === cleanUser.toLowerCase()
     );
 
     if (exists) {
@@ -303,7 +341,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: cleanName,
       role: data.role,
       grade: data.role === 'student' ? (data.grade || 8) : undefined,
-      email: `${cleanUser.toLowerCase().replace(/[^a-z0-9]/g, '_')}@school.kz`,
+      email: `${cleanUser.toLowerCase().replace(/[^a-z0-9_.-]/g, '_')}@school.kz`,
       avatarUrl:
         data.role === 'teacher'
           ? 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80'
@@ -771,7 +809,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('lp_current_user');
     localStorage.removeItem('lp_users');
     localStorage.removeItem('lp_auth');
+    localStorage.removeItem('lp_classes');
     setUsers(SEEDED_USERS);
+    setClasses(SEEDED_CLASSES);
     setAssignments(SEEDED_ASSIGNMENTS);
     setSubmissions(SEEDED_SUBMISSIONS);
     setDefenseSessions(SEEDED_DEFENSE_SESSIONS);

@@ -59,14 +59,26 @@ export const AuthModal: React.FC = () => {
   const handleRegisterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!username.trim() || !password.trim()) {
+    const cleanUser = username.trim().replace(/^@/, '');
+    const cleanPass = password.trim();
+
+    if (!cleanUser || !cleanPass) {
       setError(t('auth_err_fill_all'));
       return;
     }
+
+    if (!/^[a-zA-Z0-9_.-]{3,30}$/.test(cleanUser)) {
+      setError(
+        (t as (k: string) => string)('auth_username_invalid') ||
+        'Никнейм должен содержать от 3 символов: только английские буквы, цифры, _, . и - без пробелов'
+      );
+      return;
+    }
+
     const res = register({
-      username: username.trim(),
-      password: password.trim(),
-      name: name.trim() || username.trim(),
+      username: cleanUser,
+      password: cleanPass,
+      name: name.trim() || cleanUser,
       role: 'student',
       grade
     });
@@ -255,19 +267,23 @@ export const AuthModal: React.FC = () => {
 
               {/* Username */}
               <div>
-                <label className="block text-xs font-mono text-zinc-400 mb-1.5">
-                  {t('auth_username')}
+                <label className="block text-xs font-mono text-zinc-400 mb-1.5 flex items-center justify-between">
+                  <span>{t('auth_username')}</span>
+                  <span className="text-[10px] text-zinc-500 font-mono">a-z, 0-9, _, ., -</span>
                 </label>
                 <div className="relative">
                   <UserIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                   <input
                     type="text"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder={t('auth_username_placeholder')}
+                    onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_.-]/g, ''))}
+                    placeholder="student_arman"
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500 transition-colors font-mono"
                   />
                 </div>
+                <p className="text-[11px] text-zinc-500 font-mono mt-1">
+                  {(t as (k: string) => string)('auth_username_hint') || 'Только английские буквы, цифры, _, . и - без пробелов'}
+                </p>
               </div>
 
               {/* Password */}

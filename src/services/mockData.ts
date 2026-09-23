@@ -2,11 +2,11 @@ import { User, Assignment, Submission, DefenseSession, ClassInsight, SchoolClass
 
 export const SEEDED_USERS: User[] = [
   {
-    id: 'user_teacher_1',
-    username: 'teacher',
-    password: '12345678',
-    name: 'Амина Сериковна (Учитель)',
-    email: 'teacher@studymaxxing.kz',
+    id: 'user_teacher_sasahokage',
+    username: 'sasahokage',
+    password: '123456',
+    name: 'Учитель (sasahokage)',
+    email: 'sasahokage@studymaxxing.kz',
     role: 'teacher',
     avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
     school: 'НИШ ФМН г. Астана',
@@ -25,43 +25,7 @@ export const SEEDED_USERS: User[] = [
     avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
     school: 'РФМШ г. Алматы',
     schoolWebsite: 'https://almaty.fizmat.kz',
-  },
-  {
-    id: 'user_student_2',
-    username: 'aliya',
-    password: '12345678',
-    name: 'Алия С.',
-    email: 'aliya.student@school.kz',
-    role: 'student',
-    grade: 7,
-    classId: 'cls_cs_7',
-    className: '7 «Б» класс',
-    avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'user_student_3',
-    username: 'daniel',
-    password: '12345678',
-    name: 'Даниэль К.',
-    email: 'daniel.student@school.kz',
-    role: 'student',
-    grade: 6,
-    classId: 'cls_cs_6',
-    className: '6 «А» класс',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'user_student_4',
-    username: 'madina',
-    password: '12345678',
-    name: 'Мадина А.',
-    email: 'madina.student@school.kz',
-    role: 'student',
-    grade: 9,
-    classId: 'cls_cs_9',
-    className: '9 «А» класс',
-    avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80',
-  },
+  }
 ];
 
 export const SEEDED_CLASSES: SchoolClass[] = [
@@ -82,7 +46,7 @@ export const SEEDED_CLASSES: SchoolClass[] = [
     name: '7 «Б» класс',
     subject: 'Информатика и ветвления if/else',
     academicYear: '2026–2027',
-    studentIds: ['user_student_2'],
+    studentIds: [],
     createdAt: '2026-09-01T08:00:00Z',
   },
   {
@@ -92,7 +56,7 @@ export const SEEDED_CLASSES: SchoolClass[] = [
     name: '6 «А» класс',
     subject: 'Основы программирования и числа',
     academicYear: '2026–2027',
-    studentIds: ['user_student_3'],
+    studentIds: [],
     createdAt: '2026-09-01T08:00:00Z',
   },
   {
@@ -102,7 +66,7 @@ export const SEEDED_CLASSES: SchoolClass[] = [
     name: '9 «А» класс',
     subject: 'Списки, циклы и алгоритмы',
     academicYear: '2026–2027',
-    studentIds: ['user_student_4'],
+    studentIds: [],
     createdAt: '2026-09-01T08:00:00Z',
   },
   {
@@ -379,39 +343,6 @@ while True:
       generatedAt: '2026-09-22T14:22:00Z',
     },
     defenseSessionId: 'def_arman_1'
-  },
-  {
-    id: 'sub_aliya_1',
-    assignmentId: 'asg_calc',
-    studentId: 'user_student_2',
-    studentName: 'Алия С.',
-    studentEmail: 'aliya.student@school.kz',
-    submittedAt: '2026-09-21T18:10:00Z',
-    fileName: 'calculator.py',
-    status: 'teacher_review',
-    defenseSessionId: 'def_aliya_1',
-  },
-  {
-    id: 'sub_daniel_1',
-    assignmentId: 'asg_even',
-    studentId: 'user_student_3',
-    studentName: 'Даниэль К.',
-    studentEmail: 'daniel.student@school.kz',
-    submittedAt: '2026-09-20T11:00:00Z',
-    fileName: 'even_counter.py',
-    status: 'verified',
-    defenseSessionId: 'def_daniel_1'
-  },
-  {
-    id: 'sub_madina_1',
-    assignmentId: 'asg_game',
-    studentId: 'user_student_4',
-    studentName: 'Мадина А.',
-    studentEmail: 'madina.student@school.kz',
-    submittedAt: '2026-09-22T19:40:00Z',
-    fileName: 'guess_game.py',
-    status: 'defense_ready',
-    defenseSessionId: 'def_madina_1'
   }
 ];
 
@@ -535,99 +466,13 @@ export const SEEDED_DEFENSE_SESSIONS: Record<string, DefenseSession> = {
     teacherReview: {
       id: 'rev_arman_1',
       defenseSessionId: 'def_arman_1',
-      teacherId: 'user_teacher_1',
+      teacherId: 'user_teacher_sasahokage',
       overrideScore: 92,
-      studentFeedback: 'Отличная защита, Нурадил! Ты прекрасно понимаешь, как работает цикл while и почему нужно преобразование int(input()).',
+      studentFeedback: 'Отличная защита, Арман! Ты прекрасно понимаешь, как работает цикл while и почему нужно преобразование int(input()).',
       privateNote: 'Код написал сам. Отвечал уверенно, без пауз. Твердая пятерка за проект.',
       reviewedAt: '2026-09-22T15:10:00Z',
       status: 'verified'
     }
-  },
-  'def_aliya_1': {
-    id: 'def_aliya_1',
-    submissionId: 'sub_aliya_1',
-    studentId: 'user_student_2',
-    assignmentId: 'asg_calc',
-    status: 'teacher_review',
-    overallScore: 58,
-    questions: [
-      {
-        id: 'q_aliya_1',
-        defenseSessionId: 'def_aliya_1',
-        questionText: 'Зачем при делении op == "/" добавлена проверка if b != 0?',
-        skill: 'Обработка ошибок',
-        difficulty: 'easy',
-        timeLimit: 15,
-        orderIndex: 1,
-        purpose: 'Проверяет понимание правила деления на ноль.',
-        isRequired: true
-      }
-    ],
-    answers: {
-      'q_aliya_1': {
-        id: 'ans_aliya_1',
-        questionId: 'q_aliya_1',
-        mode: 'voice',
-        durationSeconds: 7,
-        submittedAt: '2026-09-21T18:21:00Z',
-        transcript: 'Ну... я не знаю точно, учитель сказал написать так, чтобы программа не падала с ошибкой.',
-        evaluation: {
-          id: 'eval_aliya_1',
-          conceptScore: 2.8,
-          reasoningScore: 2.5,
-          applicationScore: 2.9,
-          technicalScore: 2.6,
-          independenceScore: 2.8,
-          overallScore: 58,
-          aiFeedback: 'Ученица не смогла объяснить причину проверки деления на ноль. Требуется повторение темы с учителем.',
-          keyPunchlineDetected: false,
-          confidence: 'High'
-        }
-      }
-    }
-  },
-  'def_madina_1': {
-    id: 'def_madina_1',
-    submissionId: 'sub_madina_1',
-    studentId: 'user_student_4',
-    assignmentId: 'asg_game',
-    status: 'defense_ready',
-    questions: [
-      {
-        id: 'q_madina_1',
-        defenseSessionId: 'def_madina_1',
-        questionText: 'Зачем в коде используется бесконечный цикл while True?',
-        skill: 'Управление циклом',
-        difficulty: 'easy',
-        timeLimit: 15,
-        orderIndex: 1,
-        purpose: 'Проверка понимания повторения ввода до угадывания числа.',
-        isRequired: true
-      },
-      {
-        id: 'q_madina_2',
-        defenseSessionId: 'def_madina_1',
-        questionText: 'Что произойдет, если убрать команду break из блока угадывания?',
-        skill: 'Управление циклом',
-        difficulty: 'easy',
-        timeLimit: 15,
-        orderIndex: 2,
-        purpose: 'Понимание зацикливания программы.',
-        isRequired: true
-      },
-      {
-        id: 'q_madina_3',
-        defenseSessionId: 'def_madina_1',
-        questionText: 'Как программа выводит подсказку пользователю больше или меньше?',
-        skill: 'Ветвление логики',
-        difficulty: 'easy',
-        timeLimit: 15,
-        orderIndex: 3,
-        purpose: 'Понимание конструкции if/elif/else.',
-        isRequired: true
-      }
-    ],
-    answers: {}
   }
 };
 
