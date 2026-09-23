@@ -21,12 +21,16 @@ import {
   CheckCircle2,
   X,
   ArrowRight,
-  FileCode,
-  Flame,
   Layers,
   Award,
   Zap,
-  Sliders
+  TrendingUp,
+  Briefcase,
+  GitBranch,
+  Target,
+  FileCheck,
+  Cpu,
+  Database
 } from 'lucide-react';
 
 export interface SlideData {
@@ -103,26 +107,26 @@ export const PresentationDeck: React.FC = () => {
   }, [nextSlide, prevSlide, totalSlides]);
 
   const slides: SlideData[] = [
-    // SLIDE 1: Title & Hero
+    // SLIDE 1: ТИТУЛЬНЫЙ / ОБЛОЖКА
     {
       id: 1,
-      category: 'ОБЗОР СИСТЕМЫ',
+      category: 'ОБЛОЖКА // PITCH DECK',
       tag: 'SLIDE // 01',
-      title: 'STUDYMAXXING',
-      subtitle: 'Платформа академической честности и интерактивной устной защиты кода для школ (5–11 классы)',
+      title: 'StudyMaxxing',
+      subtitle: 'Платформа автоматизированной устной ИИ-защиты школьного кода и контроля академической честности',
       canvaPrompt: {
-        heading: 'STUDYMAXXING: Интеллектуальная устная защита кода',
-        subheading: 'Платформа академической честности для общеобразовательных школ, НИШ и РФМШ',
+        heading: 'StudyMaxxing: Устная ИИ-защита школьного кода',
+        subheading: 'Платформа академической честности для школ 5–11 классов в эпоху нейросетей',
         points: [
-          'Автоматическая сверка кода с эталоном учителя',
-          '15-секундный блиц-экзамен устной защиты (Oral Defense Engine)',
-          'Строгое выявление нерабочего кода («КОД НЕРАБОЧИЙ») при толерантности к опечаткам',
-          'Управление классами 5–11 с зачислением по никнеймам без рутинных почт'
+          'Проблема: 87% школьников сдают сгенерированный ChatGPT код без понимания',
+          'Решение: 15-секундный голосовой блиц у микрофона + AST-бенчмарк с эталоном учителя',
+          'Стек: React 18, TypeScript, Tailwind CSS, Web Speech API, эвристический AI-движок v2.4',
+          'Фокус: НИШ, РФМШ, общеобразовательные лицеи и IT-колледжи'
         ],
         bentoBlocks: [
-          { title: 'Тайминг ответа', desc: 'Строгий 15-секундный блиц без возможности списать', metric: '15 сек' },
-          { title: 'Ложные срабатывания', desc: 'Случайные забытые скобки или двоеточия прощаются', metric: '0%' },
-          { title: 'Прозрачность', desc: 'Автоматический протокол с записью голоса и сверкой токенов', metric: '100%' }
+          { title: 'Формат защиты', desc: '15-секундный голосовой блиц без времени на поиск', metric: '15 сек' },
+          { title: 'Ложные штрафы', desc: 'Забытые скобки ")" и двоеточия ":" прощаются', metric: '0%' },
+          { title: 'Статус платформы', desc: 'Рабочий веб-прототип с готовым кабинетом учителя и ученика', metric: 'PROD' }
         ]
       },
       content: (
@@ -133,7 +137,7 @@ export const PresentationDeck: React.FC = () => {
               <span>ORAL_DEFENSE_ENGINE // v2.4</span>
             </span>
             <span className="px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono text-xs">
-              НИШ • РФМШ • ШКОЛЫ КАЗАХСТАНА
+              STARTUP PITCH DECK // 2026
             </span>
           </div>
 
@@ -145,7 +149,7 @@ export const PresentationDeck: React.FC = () => {
               </div>
               <h4 className="text-sm font-bold text-zinc-100 font-sans">Устный блиц-экзамен</h4>
               <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-                Ученик отвечает на прицельные вопросы по своему коду за 15 секунд. Времени на ChatGPT или чтение чужих ответов нет.
+                Ученик за 15 секунд вслух объясняет работу ключевых строк своего алгоритма. Времени подсмотреть в ChatGPT или чужую тетрадь нет.
               </p>
             </div>
 
@@ -154,9 +158,9 @@ export const PresentationDeck: React.FC = () => {
                 <span className="text-3xl font-extrabold font-mono text-emerald-400">0%</span>
                 <ShieldCheck className="w-5 h-5 text-zinc-500" />
               </div>
-              <h4 className="text-sm font-bold text-zinc-100 font-sans">Защита от занижений</h4>
+              <h4 className="text-sm font-bold text-zinc-100 font-sans">Справедливый скоринг</h4>
               <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-                Мелкие синтаксические опечатки (скобки `)`, двоеточия `:`) не разрушают оценку. Проверяется понимание алгоритма.
+                Нерабочий код штрафуется строго по доле недописанности, а случайные описки (двоеточия, закрывающие скобки) прощаются без занижений.
               </p>
             </div>
 
@@ -165,9 +169,9 @@ export const PresentationDeck: React.FC = () => {
                 <span className="text-3xl font-extrabold font-mono text-emerald-400">5–11</span>
                 <Layers className="w-5 h-5 text-zinc-500" />
               </div>
-              <h4 className="text-sm font-bold text-zinc-100 font-sans">Сквозная программа</h4>
+              <h4 className="text-sm font-bold text-zinc-100 font-sans">Школьная программа</h4>
               <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-                Легкие калиброванные задания для каждого класса. Ученик видит только задания своего класса, назначенного учителем.
+                Сквозной банк легких калиброванных задач от базового ввода-вывода (5 класс) до функций и частотных словарей (11 класс).
               </p>
             </div>
           </div>
@@ -175,34 +179,34 @@ export const PresentationDeck: React.FC = () => {
           <div className="p-4 rounded-xl bg-zinc-950/80 border border-zinc-800/80 font-mono text-xs flex items-center justify-between text-zinc-400">
             <span className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Технологический стек: React 18 • TypeScript • Tailwind CSS • Web Speech API • Vite</span>
+              <span>Цель проекта: Вернуть смысл домашним заданиям по IT в школах Казахстана</span>
             </span>
-            <span className="text-zinc-500">PROD-READY ARCHITECTURE</span>
+            <span className="text-zinc-500">LIVE DEMO READY</span>
           </div>
         </div>
       )
     },
 
-    // SLIDE 2: Problem
+    // SLIDE 2: ПРОБЛЕМА
     {
       id: 2,
-      category: 'АНАЛИЗ РЫНКА & ПРОБЛЕМА',
+      category: 'ПРОБЛЕМА // PAIN POINT',
       tag: 'SLIDE // 02',
-      title: 'Эпоха LLM убила традиционные ДЗ',
-      subtitle: 'Генеративный ИИ (ChatGPT, DeepSeek, Claude) делает отправку исходного кода бессмысленной без устной верификации',
+      title: 'Код пишут нейросети, а не ученики',
+      subtitle: 'ChatGPT и Copilot обесценили традиционные ДЗ по программированию — учителя теряют контроль над знаниями',
       canvaPrompt: {
-        heading: 'Проблема: Смерть классической проверки кода',
-        subheading: 'Ученики получают рабочий код за секунды без понимания архитектуры',
+        heading: 'Проблема: Обесценивание домашних заданий по IT',
+        subheading: 'Генеративный ИИ разрушил классическую систему проверки кода',
         points: [
-          '87% школьников копируют решения из ИИ без понимания базовых конструкций',
-          'Традиционные антиплагиаты бессильны против уникального синтаксиса нейросетей',
-          'Учителя тратят до 40% рабочего времени на ручной опрос у доски',
-          'Отсутствие прозрачного протокола проверки создает конфликты с оценками'
+          '87% школьников копируют готовые решения из нейросетей без понимания синтаксиса',
+          'Текстовые антиплагиаты бесполезны: ИИ каждый раз переименовывает переменные',
+          '40+ часов в месяц учитель тратит на ручной опрос 30 человек у доски',
+          'Фиктивные отличники: формально код работает, но на контрольной знаний 0'
         ],
         bentoBlocks: [
-          { title: 'Код без понимания', desc: 'Ученик приносит 100 строк кода, но не может объяснить ни одной строчки', metric: '87%' },
-          { title: 'Рутина учителя', desc: 'Учитель тратит 40+ часов в месяц на индивидуальный опрос учеников', metric: '40ч/мес' },
-          { title: 'Слепая зона', desc: 'Формально код работает — фактически знания отсутствуют', metric: 'Кризис' }
+          { title: 'Бездумный копипаст', desc: 'Ученики получают рабочий код за 5 секунд из нейросети', metric: '87%' },
+          { title: 'Рутина учителя', desc: 'Учитель физически не успевает устно опросить каждого ученика', metric: '40ч/мес' },
+          { title: 'Провал тестов', desc: 'Автотесты проверяют только ввод-вывод, не проверяя автора', metric: '0% защиты' }
         ]
       },
       content: (
@@ -211,33 +215,33 @@ export const PresentationDeck: React.FC = () => {
             <div className="p-5 rounded-2xl bg-red-950/20 border border-red-900/40 space-y-3">
               <div className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4" />
-                <span>Массовый читинг</span>
+                <span>Тотальный читинг</span>
               </div>
               <div className="text-3xl font-extrabold font-mono text-zinc-100">87%</div>
               <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-                Школьников используют языковые модели для генерации готового Python-кода без погружения в синтаксис.
+                Школьников используют языковые модели для генерации решений. За 5 секунд промпта они получают 100% рабочий код без понимания логики.
               </p>
             </div>
 
             <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800 space-y-3">
               <div className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Clock className="w-4 h-4" />
-                <span>Потеря времени</span>
+                <span>Перегрузка учителей</span>
               </div>
               <div className="text-3xl font-extrabold font-mono text-zinc-100">40+ ч</div>
               <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-                Каждый месяц преподаватель информатики тратит на ручную сверку и опрос 30 человек у доски по каждому заданию.
+                В месяц преподаватель информатики тратит на попытки индивидуально расспросить каждого ученика у экрана или доски.
               </p>
             </div>
 
             <div className="p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800 space-y-3">
               <div className="text-xs font-mono font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                <FileCode className="w-4 h-4" />
-                <span>Бессилие антиплагиата</span>
+                <ShieldCheck className="w-4 h-4" />
+                <span>Слепота автотестов</span>
               </div>
-              <div className="text-3xl font-extrabold font-mono text-zinc-100">0% защиты</div>
+              <div className="text-3xl font-extrabold font-mono text-zinc-100">0% авторства</div>
               <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-                Текстовые анализаторы не ловят код, сгенерированный с уникальными переменными и альтернативной структурой.
+                Существующие платформы проверяют только `stdout`. Если ChatGPT выдал верный ответ — система ставит «5», даже если ученик не знает `for`.
               </p>
             </div>
           </div>
@@ -247,9 +251,9 @@ export const PresentationDeck: React.FC = () => {
               !
             </div>
             <div>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Ключевой вызов образования:</h5>
+              <h5 className="text-sm font-bold text-zinc-100 font-sans">Главная боль школы:</h5>
               <p className="text-xs text-zinc-400 font-sans mt-0.5">
-                Единственный надежный критерий реальных навыков школьника — способность вслух за 15 секунд аргументировать работу своего алгоритма.
+                Оценка перестала отражать знания. Учитель не может доказать факт списывания, а ученик теряет мотивацию учиться писать код самостоятельно.
               </p>
             </div>
           </div>
@@ -257,26 +261,26 @@ export const PresentationDeck: React.FC = () => {
       )
     },
 
-    // SLIDE 3: Solution & Two-Tier Verification
+    // SLIDE 3: НАШЕ РЕШЕНИЕ
     {
       id: 3,
-      category: 'АРХИТЕКТУРА РЕШЕНИЯ',
+      category: 'НАШЕ РЕШЕНИЕ // SOLUTION',
       tag: 'SLIDE // 03',
-      title: 'Двухконтурная верификация авторства',
-      subtitle: 'Синтаксический AST-бенчмарк + интерактивный голосовой блиц-экзамен в браузере',
+      title: 'StudyMaxxing: Двухконтурная верификация',
+      subtitle: 'Мгновенная сверка кода с эталоном учителя + 15-секундный голосовой блиц у микрофона',
       canvaPrompt: {
-        heading: 'Архитектурное решение: Двухконтурная защита',
+        heading: 'Наше решение: Двухконтурная устная защита',
         subheading: 'Комплексный анализ кода и моментальная проверка понимания',
         points: [
-          'Контур 1: AST-парсинг и сверка с эталонным решением учителя',
-          'Контур 2: Генерация прицельных вопросов конкретно по строкам ученика',
-          'Контур 3: 15-секундная голосовая защита через Web Speech API',
-          'Формирование юридически прозрачного протокола защиты'
+          'Контур 1: Автоматический анализ кода и сверка с эталонным решением учителя',
+          'Контур 2: Генерация 3 адресных вопросов по строкам кода ученика',
+          'Контур 3: 15-секундный голосовой блиц с детекцией программных терминов',
+          'Автоматический протокол защиты с объективной оценкой авторства'
         ],
         bentoBlocks: [
-          { title: 'Контур I: Анализ кода', desc: 'Проверка структуры AST, детекция синтаксических аномалий и эталона' },
-          { title: 'Контур II: Устный блиц', desc: 'Автоматическая формулировка 3 каверзных вопросов по коду' },
-          { title: 'Контур III: Протокол', desc: 'Аудио-транскрипт, детекция токенов и итоговый скоринг' }
+          { title: 'Контур I: Анализ кода', desc: 'Проверка структуры AST, статус нерабочего кода, прощение опечаток' },
+          { title: 'Контур II: Генерация вопросов', desc: 'ИИ формулирует 3 каверзных вопроса именно по коду ученика' },
+          { title: 'Контур III: Голосовой блиц', desc: 'Web Speech API распознает термины речи и фиксирует ответ за 15с' }
         ]
       },
       content: (
@@ -287,40 +291,40 @@ export const PresentationDeck: React.FC = () => {
                 <span className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px]">1</span>
                 <span>AST & Benchmark Check</span>
               </div>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Сверка с эталоном учителя</h5>
+              <h5 className="text-sm font-bold text-zinc-100 font-sans">Сверка с эталоном</h5>
               <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Сравнение ключевых токенов кода (`for`, `while`, `def`, `list`, `return`) с эталонной реализацией преподавателя.
+                Сверка алгоритма со структурой преподавателя. Выявление нерабочего или недописанного кода, отсечение пустых файлов и аномалий ИИ.
               </p>
               <div className="p-2 rounded bg-zinc-950 font-mono text-[10px] text-zinc-400 border border-zinc-800/80">
-                AST_VALIDATE // 88% MATCH
+                BENCHMARK // VERIFIED
               </div>
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2.5">
               <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400 uppercase">
                 <span className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px]">2</span>
-                <span>Question Synthesis</span>
+                <span>Adaptive Questions</span>
               </div>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Прицельные вопросы ИИ</h5>
+              <h5 className="text-sm font-bold text-zinc-100 font-sans">3 прицельных вопроса</h5>
               <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Формирование 3 индивидуальных вопросов: роль ключевых операторов, логика условий и обоснование выбора структур.
+                ИИ задает вопросы строго по сданному тексту: «Зачем в строке 4 условие `% 2 == 0`?», «Что произойдет, если список окажется пустым?».
               </p>
               <div className="p-2 rounded bg-zinc-950 font-mono text-[10px] text-zinc-400 border border-zinc-800/80">
-                PROMPT_SYNTHESIS // 3 QUESTIONS
+                TARGETED_QUESTIONS // 3x
               </div>
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2.5">
               <div className="flex items-center gap-2 text-xs font-mono font-bold text-emerald-400 uppercase">
                 <span className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px]">3</span>
-                <span>15s Speech Defense</span>
+                <span>15s Speech Blitz</span>
               </div>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Голосовой блиц-ответ</h5>
+              <h5 className="text-sm font-bold text-zinc-100 font-sans">Устный блиц-ответ</h5>
               <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Распознавание речи ученика в браузере в реальном времени, подсчет попадания в ключевые термины (`цикл`, `счетчик`).
+                Ученик отвечает в микрофон за 15 секунд. Браузер распознает терминологию и оценивает аргументированность в реальном времени.
               </p>
               <div className="p-2 rounded bg-zinc-950 font-mono text-[10px] text-emerald-400 border border-emerald-500/30">
-                WEB_SPEECH_API // DEFENSE READY
+                VOICE_VERDICT // 92% АВТОРСТВО
               </div>
             </div>
           </div>
@@ -328,465 +332,481 @@ export const PresentationDeck: React.FC = () => {
           <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs font-mono text-emerald-300">
             <span className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Результат: объективный цифровой отчет для учителя с аудио-транскриптом и оценкой авторства</span>
+              <span>Итог: 100% понимание того, сам ли ученик написал код или бездумно скопировал</span>
             </span>
-            <span className="font-bold text-zinc-100">АВТОЗАЧЕТ</span>
+            <span className="font-bold text-zinc-100">АВТОМАТИЗАЦИЯ</span>
           </div>
         </div>
       )
     },
 
-    // SLIDE 4: Code Health & Broken Code Engine
+    // SLIDE 4: КАК ЭТО РАБОТАЕТ
     {
       id: 4,
-      category: 'ДЕТЕКЦИЯ КАЧЕСТВА КОДА',
+      category: 'КАК ЭТО РАБОТАЕТ // USER FLOW',
       tag: 'SLIDE // 04',
-      title: 'Интеллектуальная калибровка кода',
-      subtitle: 'Четкая детекция статуса «КОД НЕРАБОЧИЙ» при лояльности к случайным опечаткам',
+      title: 'Пайплайн защиты за 90 секунд',
+      subtitle: 'Бесшовный путь от сдачи файла до итогового протокола с аудио-транскриптом',
       canvaPrompt: {
-        heading: 'Интеллектуальный анализ: Нерабочий код vs Опечатки',
-        subheading: 'Справедливое дифференцированное оценивание',
+        heading: 'Пайплайн защиты: 4 шага за 90 секунд',
+        subheading: 'Как устроен процесс прохождения устной защиты учеником',
         points: [
-          'Статус «ФАЙЛ ПУСТ»: Строгие 0% при отсутствии логики',
-          'Статус «КОД НЕРАБОЧИЙ»: Снижение процентов пропорционально недописанности',
-          'Статус «МЕЛКАЯ ОПЕЧАТКА»: Забытые скобки или двоеточия прощаются (88–95%)',
-          'Адресные вопросы: экзаменатор спрашивает, почему алгоритм не завершен'
+          'Шаг 1: Загрузка файла solution.py (или вставка кода в редактор)',
+          'Шаг 2: Анализ ИИ за 1.5 секунды: сверка с эталоном учителя',
+          'Шаг 3: 15-секундный голосовой блиц: 3 вопроса с микрофоном',
+          'Шаг 4: Готовый цифровой протокол с оценкой и транскрипцией'
         ],
         bentoBlocks: [
-          { title: 'Пустой файл', desc: '0% балл. Вопросы о том, почему задание даже не начиналось', metric: '0%' },
-          { title: 'Нерабочий код', desc: 'Штраф пропорционален пропущенным алгоритмам', metric: 'Штраф' },
-          { title: 'Мелкая опечатка', desc: 'Забытая скобка ")" или ":" не снижает оценку за алгоритм', metric: 'Зачет' }
+          { title: '1. Загрузка', desc: 'Ученик выбирает файл с кодом решения', metric: 'Шаг 1' },
+          { title: '2. Сверка', desc: 'Проверка кода на работоспособность и эталон', metric: 'Шаг 2' },
+          { title: '3. Блиц 15с', desc: 'Ответ на 3 вопроса голосом в микрофон', metric: 'Шаг 3' },
+          { title: '4. Протокол', desc: 'Итоговый балл и выгрузка отчета учителю', metric: 'Шаг 4' }
         ]
       },
       content: (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Broken Code Card */}
-            <div className="p-4 rounded-xl bg-red-950/20 border border-red-500/40 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/40">
-                  КОД НЕРАБОЧИЙ
-                </span>
-                <AlertTriangle className="w-4 h-4 text-red-400" />
-              </div>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Недописанный алгоритм</h5>
-              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Если пропущены ключевые условия, циклы или вызовы функций — баллы снижаются строго пропорционально недописанности.
-              </p>
-              <div className="text-[11px] text-red-300 font-mono bg-zinc-950/80 p-2 rounded border border-red-900/50">
-                «На сколько % не завершен код?»
-              </div>
-            </div>
-
-            {/* Empty File Card */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-zinc-800 text-zinc-400 border border-zinc-700">
-                  ФАЙЛ ПУСТ
-                </span>
-                <X className="w-4 h-4 text-zinc-500" />
+              <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center font-mono text-xs font-bold text-zinc-200">
+                01
               </div>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">0% за пустой шаблон</h5>
-              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Если файл пуст или содержит лишь стандартные комментарии — моментально выставляется 0% и генерируются вопросы о причинах.
+              <h5 className="text-xs font-bold text-zinc-100 font-sans">Загрузка кода</h5>
+              <p className="text-[11px] text-zinc-400 font-sans">
+                Ученик загружает файл `solution.py` своего класса или редактирует прямо в браузере.
               </p>
-              <div className="text-[11px] text-zinc-400 font-mono bg-zinc-950/80 p-2 rounded border border-zinc-800">
-                SCORE: 0% // EMPTY_SUBMISSION
-              </div>
             </div>
 
-            {/* Minor Slip Forgiveness */}
-            <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                  ОПЕЧАТКА ПРОЩЕНА
-                </span>
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center font-mono text-xs font-bold text-zinc-200">
+                02
               </div>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Толерантность к опискам</h5>
-              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Забытая закрывающая скобка `)` или двоеточие `:` в конце `if/for` не наказываются. Оценка сохраняется на уровне 88–95%.
+              <h5 className="text-xs font-bold text-zinc-100 font-sans">Мгновенный анализ</h5>
+              <p className="text-[11px] text-zinc-400 font-sans">
+                Система за 1.5 секунды сверяет решение с эталоном учителя и проверяет работоспособность.
               </p>
-              <div className="text-[11px] text-emerald-300 font-mono bg-zinc-950/80 p-2 rounded border border-emerald-500/20">
-                88%–95% // АВТОЗАЧЕТ
+            </div>
+
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-2">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-mono text-xs font-bold text-emerald-400">
+                03
               </div>
+              <h5 className="text-xs font-bold text-emerald-300 font-sans">15с Голосовой блиц</h5>
+              <p className="text-[11px] text-zinc-300 font-sans">
+                Ученик нажимает «Ответить» и за 15 секунд в микрофон поясняет свои строки кода.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <div className="w-7 h-7 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center font-mono text-xs font-bold text-zinc-200">
+                04
+              </div>
+              <h5 className="text-xs font-bold text-zinc-100 font-sans">Протокол защиты</h5>
+              <p className="text-[11px] text-zinc-400 font-sans">
+                Формируется отчет: оценка, совпадение токенов, транскрипт и вердикт учителю.
+              </p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between text-xs font-mono">
-            <span className="text-zinc-300">Принцип: Оценивать алгоритмическое мышление школьника, а не механические опечатки.</span>
-            <span className="text-emerald-400 font-bold">FAIR GRADING</span>
+          <div className="p-3.5 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between font-mono text-xs text-zinc-300">
+            <span>Общее время на 1 ученика: 90 секунд • Нагрузка на учителя: 0 минут</span>
+            <span className="text-emerald-400 font-bold">100% AUTOMATED</span>
           </div>
         </div>
       )
     },
 
-    // SLIDE 5: 15-Second Oral Blitz Defense Mechanics
+    // SLIDE 5: ТЕХНОЛОГИЧЕСКИЙ СТЕК
     {
       id: 5,
-      category: 'МЕХАНИКА УСТНОЙ ЗАЩИТЫ',
+      category: 'ТЕХНОЛОГИЧЕСКИЙ СТЕК // TECH STACK',
       tag: 'SLIDE // 05',
-      title: '15-секундный блиц-экзамен',
-      subtitle: 'Сверхбыстрый тайминг ответа с автоматическим распознаванием терминов речи',
+      title: 'Современный клиентский стек без задержек',
+      subtitle: 'Высокопроизводительная web-архитектура, работающая в реальном времени прямо в браузере',
       canvaPrompt: {
-        heading: '15-секундный блиц-экзамен: Анти-шпаргалка',
-        subheading: 'Голосовая защита без возможности обратиться к внешним источникам',
+        heading: 'Технологический стек: Скорость и надежность',
+        subheading: 'Легковесная архитектура без серверных задержек',
         points: [
-          '15 секунд на ответ исключают чтение заготовленных чужих конспектов',
-          'JSGF-грамматика ищет реальные токены кода в русской и казахской речи',
-          'Строгий фильтр признаний: «не знаю / списал / хз» дают строгие 0%',
-          'Мгновенный аудио-транскрипт с подсветкой аргументов'
+          'Frontend: React 18, TypeScript, Vite — моментальная загрузка за 0.3 секунды',
+          'UI & Design System: Tailwind CSS, Lucide Icons, кастомная темная тема (Zero Slop)',
+          'Speech Engine: Browser Web Speech API с поддержкой русского и казахского языков',
+          'AI Engine: Двухуровневый движок (эвристический локальный v2.4 + облачный Gemini Flash)'
         ],
         bentoBlocks: [
-          { title: 'Анти-чит таймер', desc: '15 секунд на вопрос: моментальная проверка понимания', metric: '15 сек' },
-          { title: 'Zero Tolerance', desc: '«Не знаю / не помню / списал» приводят к мгновенному 0%', metric: '0%' },
-          { title: 'Детектор терминов', desc: 'Учет токенов: цикл, условие, список, переменная', metric: 'JSGF' }
+          { title: 'Frontend Core', desc: 'React 18 + TypeScript + Vite бандлер', metric: 'React 18' },
+          { title: 'Voice Engine', desc: 'Web Speech API со словарем токенов Python', metric: 'Realtime' },
+          { title: 'AI Scoring', desc: 'Локальный нейро-движок v2.4 + Gemini 1.5 Cloud', metric: 'Hybrid AI' },
+          { title: 'Design System', desc: 'Tailwind CSS, JetBrains Mono, Dark Mode (#09090b)', metric: 'Zero Slop' }
         ]
       },
       content: (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3 font-mono">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500 uppercase">Алгоритм калибровки:</span>
-                <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
-                  <Mic className="w-3.5 h-3.5" />
-                  VOICE_STREAM
-                </span>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 font-mono text-xs">
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <Code2 className="w-4 h-4" />
+                <span className="font-bold text-[11px]">FRONTEND CORE</span>
               </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between p-2 rounded bg-zinc-950 border border-zinc-800 text-red-400">
-                  <span>«Не знаю / забыл / списал»:</span>
-                  <span className="font-bold">0% (Отказ)</span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded bg-zinc-950 border border-zinc-800 text-amber-400">
-                  <span>Оффтоп или случайные слова:</span>
-                  <span className="font-bold">1–5% (Штраф)</span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded bg-zinc-950 border border-zinc-800 text-zinc-300">
-                  <span>Поверхностное описание:</span>
-                  <span className="font-bold">25–40%</span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded bg-zinc-950 border border-zinc-800 text-emerald-400">
-                  <span>Точный ответ с терминами:</span>
-                  <span className="font-bold">85–98% (Зачет)</span>
-                </div>
-              </div>
+              <div className="font-bold text-zinc-100 font-sans text-sm">React 18 & TS</div>
+              <p className="text-[11px] text-zinc-400 font-sans">
+                Строгая типизация всех сущностей (User, Submission, Class), сборка Vite v5.4.
+              </p>
             </div>
 
-            <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3 font-mono">
-              <div className="text-xs text-zinc-500 uppercase">Пример карточки вопроса:</div>
-              <div className="p-3 rounded-xl bg-zinc-950 border border-zinc-800 space-y-2">
-                <span className="text-[10px] text-emerald-400 font-bold uppercase">Вопрос #2 из 3:</span>
-                <p className="text-xs text-zinc-100 font-sans font-semibold">
-                  «Какую роль в твоей программе выполняет условие if num % 2 == 0?»
-                </p>
-                <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
-                    токены: остаток, деление, четность
-                  </span>
-                </div>
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <Mic className="w-4 h-4" />
+                <span className="font-bold text-[11px]">VOICE ENGINE</span>
               </div>
-
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 font-sans">
-                Ученик отвечает в микрофон: <span className="text-zinc-100 font-mono">«Проверяет остаток от деления на два...»</span> — ИИ фиксирует попадание в токен `четность` и засчитывает ответ.
-              </div>
+              <div className="font-bold text-zinc-100 font-sans text-sm">Web Speech API</div>
+              <p className="text-[11px] text-zinc-400 font-sans">
+                Прямая работа с аудио-потоком микрофона без отправки тяжелых WAV-файлов на сервер.
+              </p>
             </div>
+
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <Cpu className="w-4 h-4" />
+                <span className="font-bold text-[11px]">AI SCORING</span>
+              </div>
+              <div className="font-bold text-zinc-100 font-sans text-sm">Hybrid Engine v2.4</div>
+              <p className="text-[11px] text-zinc-400 font-sans">
+                Мгновенный эвристический анализ + глубокая калибровка ответа с отсечением обмана.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <Database className="w-4 h-4" />
+                <span className="font-bold text-[11px]">PRIVACY & DATA</span>
+              </div>
+              <div className="font-bold text-zinc-100 font-sans text-sm">Zero Data Leak</div>
+              <p className="text-[11px] text-zinc-400 font-sans">
+                Абстрактные SVG-аватарки DiceBear, отсутствие фотографий лиц и конфиденциальность.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-zinc-950 border border-zinc-800 flex items-center justify-between text-xs font-mono text-zinc-400">
+            <span>Production Bundle: 449 kB JS • 35 kB CSS • Скорость загрузки: &lt; 0.3s</span>
+            <span className="text-emerald-400 font-bold">OPTIMIZED BUILD</span>
           </div>
         </div>
       )
     },
 
-    // SLIDE 6: Teacher Dashboard & Class Management
+    // SLIDE 6: НАШИ ПРЕИМУЩЕСТВА / УТП
     {
       id: 6,
-      category: 'ПАНЕЛЬ ПРЕПОДАВАТЕЛЯ',
+      category: 'ПРЕИМУЩЕСТВА // UNIQUE VALUE',
       tag: 'SLIDE // 06',
-      title: 'Командный центр учителя',
-      subtitle: 'Быстрое создание классов, зачисление по @никнеймам и контроль школы',
+      title: 'Ключевые преимущества и УТП',
+      subtitle: 'Уникальные инженерные механизмы, которые решают проблему списывания на корню',
       canvaPrompt: {
-        heading: 'Кабинет учителя: Полный контроль академического процесса',
-        subheading: 'Управление классами 5–11 и мониторинг сдачи работ',
+        heading: 'Наши преимущества: Почему StudyMaxxing побеждает',
+        subheading: 'Уникальные фичи, которых нет в классических школьных платформах',
         points: [
-          'Создание класса (буква, предмет, учебный год) за 30 секунд',
-          'Зачисление учеников списком по @никнеймам без рутинных email-ов',
-          'Автоматическая привязка школы: ученики наследуют школу преподавателя',
-          'Сводная таблица успеваемости и просмотр видео/аудио протоколов защит'
+          '15-секундный таймер: исключает возможность параллельного гугления или чтения шпаргалок',
+          'Толерантность к опечаткам: случайные скобки ")" и двоеточия ":" не режут оценку',
+          'Статус «КОД НЕРАБОЧИЙ»: моментальный детект недописанного кода со справедливым штрафом',
+          'Зачисление по @никам: добавление класса за 30 секунд без рутинных email'
         ],
         bentoBlocks: [
-          { title: 'Зачисление', desc: 'Добавление учеников по никам за 1 клик', metric: '30 сек' },
-          { title: 'Привязка школы', desc: 'Ученики автоматически прикрепляются к учебному заведению учителя', metric: 'Авто' },
-          { title: 'Статистика', desc: 'Общий тепловой мониторинг рисков списывания', metric: '100%' }
-        ]
-      },
-      content: (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <Users className="w-4 h-4" />
-              </div>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Зачисление по @никам</h5>
-              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Учитель просто вставляет список никнеймов (`@arman`, `@dias`). Система сама находит или создает профили без возни с почтами.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <Award className="w-4 h-4" />
-              </div>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Автопривязка школы</h5>
-              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Школа учителя (например, НИШ ФМН г. Астана) мгновенно назначается всем зачисленным ученикам. Ученик не может изменить ее сам.
-              </p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <Sliders className="w-4 h-4" />
-              </div>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Аналитика защит</h5>
-              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Преподаватель видит статус каждого ученика: кто сдал, у кого нерабочий код, кто прошел блиц с подтверждением авторства.
-              </p>
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-zinc-900/80 border border-zinc-800 font-mono text-xs flex items-center justify-between text-zinc-400">
-            <span>Классы: 8 «А», 9 «Б», 10 «А» • Предмет: Информатика и Python</span>
-            <span className="text-emerald-400 font-bold">TEACHER_HUB // ONLINE</span>
-          </div>
-        </div>
-      )
-    },
-
-    // SLIDE 7: Student Space, Privacy & Unassigned Status
-    {
-      id: 7,
-      category: 'ПРОСТРАНСТВО УЧЕНИКА',
-      tag: 'SLIDE // 07',
-      title: 'Кабинет ученика: фокус и приватность',
-      subtitle: 'Статус «(пока не зачислен)», нейтральные безликие аватарки и защита персональных данных',
-      canvaPrompt: {
-        heading: 'Кабинет ученика: Безопасность и нейтральный интерфейс',
-        subheading: 'Отсутствие утечек персональных данных и токсичности',
-        points: [
-          'Статус «(пока не зачислен)»: статус меняется только при добавлении учителем в класс',
-          'Блокировка выбора школы: ученик не может самостоятельно приписывать чужое заведение',
-          'Нейтральные безликие аватарки: удалены любые фото людей, используются DiceBear SVG',
-          'Персонализированная лента заданий строго для своего класса'
-        ],
-        bentoBlocks: [
-          { title: 'Статус зачисления', desc: '«(пока не зачислен)» защищает от подлога классов', metric: 'Strict' },
-          { title: 'Безликие аватарки', desc: 'Векторные геометрические абстракции без реальных лиц', metric: 'Privacy' },
-          { title: 'Школьный контур', desc: 'Ученик закреплен строго за школой своего учителя', metric: 'Lock' }
+          { title: '15с Анти-чит', desc: 'Невозможно успеть зайти в ChatGPT за 15 секунд ответа', metric: '15 сек' },
+          { title: 'Честный скоринг', desc: 'Прощение механических опечаток при защите алгоритма', metric: 'Fair' },
+          { title: 'Быстрый старт', desc: 'Учитель добавляет класс по никнеймам за 1 клик', metric: '30 сек' },
+          { title: 'Приватность', desc: '0% человеческих лиц на платформе — нейтральные SVG', metric: '100%' }
         ]
       },
       content: (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3 font-mono">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500 uppercase">Статус зачисления:</span>
-                <span className="text-xs text-amber-400 font-bold bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded">
-                  (пока не зачислен)
-                </span>
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-bold">
+                <Zap className="w-4 h-4" />
+                <span>15-СЕКУНДНЫЙ АНТИ-ЧИТ</span>
               </div>
-              <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-                До момента, пока преподаватель не зачислит ученика в класс, профиль находится в статусе ожидания. Это предотвращает отправку заданий не в свой класс.
+              <h5 className="text-sm font-bold text-zinc-100 font-sans">Лимит времени убивает шпаргалки</h5>
+              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+                Если ученик не писал код сам, за 15 секунд он не успеет прочитать текст вопроса, вставить его во второй монитор и прочитать ответ.
               </p>
-              <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-[11px] text-zinc-400 font-sans">
-                🔒 Выбор школы и смена класса для ученика заблокированы — это прерогатива учителя.
-              </div>
             </div>
 
-            <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-3 font-mono">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-zinc-500 uppercase">Безопасность аватарок:</span>
-                <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded">
-                  0% РЕАЛЬНЫХ ЛИЦ
-                </span>
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-bold">
+                <ShieldCheck className="w-4 h-4" />
+                <span>ТОЛЕРАНТНОСТЬ К ОПЕЧАТКАМ</span>
               </div>
-              <p className="text-xs text-zinc-300 font-sans leading-relaxed">
-                Платформа использует нейтральные детерминированные SVG-паттерны (DiceBear Shapes и Identicon). Никаких фотографий реальных людей и рисков буллинга.
+              <h5 className="text-sm font-bold text-zinc-100 font-sans">Оцениваем ум, а не случайности</h5>
+              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+                Случайно забытая скобка `)` или двоеточие `:` в конце `if` прощаются (88–95% зачет). Мы не наказываем детей за мелкие описки.
               </p>
-              <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-[11px] text-zinc-400 font-sans">
-                🛡️ Соответствие стандартам безопасности персональных данных несовершеннолетних.
+            </div>
+
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-bold">
+                <AlertTriangle className="w-4 h-4" />
+                <span>ДЕТЕКТ НЕРАБОЧЕГО КОДА</span>
               </div>
+              <h5 className="text-sm font-bold text-zinc-100 font-sans">Статус «КОД НЕРАБОЧИЙ»</h5>
+              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+                Если ученик сдал пустой файл или недописанный фрагмент — система снижает процент пропорционально нехватке ключевых конструкций.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono font-bold">
+                <Users className="w-4 h-4" />
+                <span>ЗАЧИСЛЕНИЕ ПО @НИКАМ</span>
+              </div>
+              <h5 className="text-sm font-bold text-zinc-100 font-sans">0 рутины для преподавателя</h5>
+              <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+                Учитель просто вставляет `@arman, @dias`. Ученики мгновенно закрепляются за классом и школой без ручной регистрации почт.
+              </p>
             </div>
           </div>
         </div>
       )
     },
 
-    // SLIDE 8: Grade-Specific Easy Assignments (5-11)
+    // SLIDE 7: РЫНОК И ЦЕЛЕВАЯ АУДИТОРИЯ
     {
-      id: 8,
-      category: 'УЧЕБНАЯ ПРОГРАММА',
-      tag: 'SLIDE // 08',
-      title: 'Сквозная программа (5–11 классы)',
-      subtitle: 'Легкие, калиброванные практические задания для каждого возраста с эталонами решений',
+      id: 7,
+      category: 'РЫНОК & АУДИТОРИЯ // MARKET',
+      tag: 'SLIDE // 07',
+      title: 'Рынок школ и IT-образования',
+      subtitle: 'Огромный спрос со стороны передовых школ Казахстана и СНГ на решения контроля честности',
       canvaPrompt: {
-        heading: 'Банк заданий: От 5 до 11 класса',
-        subheading: 'Плавная кривая обучения от простого ввода к структурам данных',
+        heading: 'Рынок и аудитория: Казахстан и СНГ',
+        subheading: 'Целевые сегменты образовательных учреждений',
         points: [
-          '5–6 классы: Простой ввод/вывод данных и базовая арифметика',
-          '7–8 классы: Ветвления if/else и простые циклы while/for',
-          '9–10 классы: Работа со списками, поиск средних значений и палиндромы',
-          '11 класс: Словари (dict) и подсчет частотности слов'
+          'TAM: 7 500+ школ Казахстана и 100 000+ школ СНГ (EdTech объем $1.2B)',
+          'SAM: 300+ флагманских лицеев (НИШ, РФМШ, БИЛ) с углубленной информатикой',
+          'SOM: 25 пилотных школ в первый учебный год (5 000+ учеников)',
+          'Целевая аудитория: Учителя информатики, завучи по цифровизации, директора лицеев'
         ],
         bentoBlocks: [
-          { title: '5–6 класс', desc: 'Приветствие и сумма чисел', metric: 'greeting.py' },
-          { title: '7–8 класс', desc: 'Четность чисел и обратный отсчет', metric: 'even_odd.py' },
-          { title: '9–10 класс', desc: 'Списки и проверка палиндрома', metric: 'palindrome.py' },
-          { title: '11 класс', desc: 'Словари и частотный анализ текста', metric: 'frequency.py' }
-        ]
-      },
-      content: (
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
-            <div className="p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-1.5">
-              <span className="text-[10px] text-emerald-400 font-bold">5–6 КЛАСС</span>
-              <div className="font-bold text-zinc-100 font-sans text-sm">Ввод и вывод</div>
-              <p className="text-[11px] text-zinc-400 font-sans">`input()`, `print()`, базовое сложение двух чисел.</p>
-              <div className="text-[10px] text-zinc-500">greeting.py</div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-1.5">
-              <span className="text-[10px] text-emerald-400 font-bold">7–8 КЛАСС</span>
-              <div className="font-bold text-zinc-100 font-sans text-sm">Условия и циклы</div>
-              <p className="text-[11px] text-zinc-400 font-sans">Проверка четности `% 2`, циклы `for` и `while`.</p>
-              <div className="text-[10px] text-zinc-500">even_odd.py</div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-1.5">
-              <span className="text-[10px] text-emerald-400 font-bold">9–10 КЛАСС</span>
-              <div className="font-bold text-zinc-100 font-sans text-sm">Списки и функции</div>
-              <p className="text-[11px] text-zinc-400 font-sans">Среднее арифметическое, срезы строк, палиндромы.</p>
-              <div className="text-[10px] text-zinc-500">palindrome.py</div>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-1.5">
-              <span className="text-[10px] text-emerald-400 font-bold">11 КЛАСС</span>
-              <div className="font-bold text-zinc-100 font-sans text-sm">Словари и данные</div>
-              <p className="text-[11px] text-zinc-400 font-sans">Частотный словарь слов, работа с парами ключ-значение.</p>
-              <div className="text-[10px] text-zinc-500">frequency.py</div>
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs text-zinc-400 font-sans">
-            Ученик никогда не путается в чужих задачах: если он в 8 классе, в его дашборде отображается строго задание за 8 класс с эталоном учителя.
-          </div>
-        </div>
-      )
-    },
-
-    // SLIDE 9: Metrics & Time Economy
-    {
-      id: 9,
-      category: 'ЭКОНОМИКА ВРЕМЕНИ ШКОЛЫ',
-      tag: 'SLIDE // 09',
-      title: 'Метрики эффективности внедрения',
-      subtitle: 'Радикальное сокращение рутины учителя и повышение объективности оценивания',
-      canvaPrompt: {
-        heading: 'Эффективность внедрения: Цифры и результаты',
-        subheading: 'Экономия сотен часов преподавательского состава',
-        points: [
-          'Сокращение времени проверки на 90% (с 40 часов до 4 часов в месяц)',
-          '100% охват устной защитой каждого ученика класса',
-          'Полная юридическая прозрачность: запись ответов и оценка ИИ',
-          'Рост осознанности: ученики перестают бездумно генерировать код в ChatGPT'
-        ],
-        bentoBlocks: [
-          { title: 'Экономия времени', desc: 'Учитель освобождает до 36 часов в месяц от рутинного опроса', metric: '-90%' },
-          { title: 'Охват защитами', desc: 'Каждый ученик персонально защищает свою работу', metric: '100%' },
-          { title: 'Дисциплина', desc: 'Снижение числа бездумных копипастов из интернета', metric: '3.4x' }
+          { title: 'TAM (Общий рынок)', desc: 'Все общеобразовательные школы Казахстана и СНГ', metric: '7 500+ школ' },
+          { title: 'SAM (Целевой рынок)', desc: 'Флагманские лицеи: НИШ, РФМШ, БИЛ, IT-лицеи', metric: '300+ школ' },
+          { title: 'SOM (Первый год)', desc: 'Пилотные классы и лицеи Астаны и Алматы', metric: '25 школ' }
         ]
       },
       content: (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
             <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-              <span className="text-3xl font-extrabold text-emerald-400">-90%</span>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Экономия времени</h5>
+              <span className="text-xs text-zinc-500 uppercase">TAM // Весь рынок</span>
+              <div className="text-3xl font-extrabold text-zinc-100">7 500+</div>
+              <h5 className="text-sm font-bold text-zinc-200 font-sans">Школ Казахстана</h5>
               <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                С 40 часов рутинного опроса до нескольких минут просмотра готовых отчетов в дашборде.
+                Более 3.8 млн школьников, изучающих базовую и углубленную информатику.
               </p>
             </div>
 
             <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-              <span className="text-3xl font-extrabold text-emerald-400">100%</span>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Охват защитой</h5>
+              <span className="text-xs text-emerald-400 uppercase font-bold">SAM // Наш сегмент</span>
+              <div className="text-3xl font-extrabold text-emerald-400">300+</div>
+              <h5 className="text-sm font-bold text-zinc-200 font-sans">Флагманские лицеи</h5>
               <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Каждый школьник обязательно проходит устный блиц. Невозможно «отсидеться» на последней парте.
+                Сеть НИШ, РФМШ, БИЛ, лицеи «Дарын» и гимназии с повышенными требованиями к честности.
               </p>
             </div>
 
             <div className="p-5 rounded-2xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-              <span className="text-3xl font-extrabold text-emerald-400">3.4x</span>
-              <h5 className="text-sm font-bold text-zinc-100 font-sans">Рост понимания</h5>
+              <span className="text-xs text-zinc-500 uppercase">SOM // Год 1</span>
+              <div className="text-3xl font-extrabold text-zinc-100">25 школ</div>
+              <h5 className="text-sm font-bold text-zinc-200 font-sans">Пилотный запуск</h5>
               <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-                Зная о 15-секундном блице, ученики разбираются в логике каждой написанной строки.
+                5 000+ учеников, 80 преподавателей в Астане, Алматы и Шымкенте.
               </p>
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs font-mono text-emerald-300 flex items-center justify-between">
-            <span>Стандарт академической честности: NIS • РФМШ • Республиканские лицеи</span>
-            <span className="font-bold">VERIFIED_PROTOCOL</span>
+          <div className="p-3.5 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center justify-between text-xs font-mono text-zinc-300">
+            <span>Пользователи: Учителя информатики (B2B/B2G) • Конечные бенефициары: Школьники 5–11 классов</span>
+            <span className="text-emerald-400 font-bold">HIGH DEMAND</span>
           </div>
         </div>
       )
     },
 
-    // SLIDE 10: Vision & Roadmap
+    // SLIDE 8: БИЗНЕС-МОДЕЛЬ И МОНЕТИЗАЦИЯ
     {
-      id: 10,
-      category: 'ДОРОЖНАЯ КАРТА & ФИНАЛ',
-      tag: 'SLIDE // 10',
-      title: 'Будущее StudyMaxxing',
-      subtitle: 'Масштабирование на всю систему школьного IT-образования Казахстана и СНГ',
+      id: 8,
+      category: 'БИЗНЕС-МОДЕЛЬ // BUSINESS MODEL',
+      tag: 'SLIDE // 08',
+      title: 'B2B SaaS-подписка для школ',
+      subtitle: 'Прозрачная модель: бесплатный вход для учителей и институциональная школьная лицензия',
       canvaPrompt: {
-        heading: 'Будущее StudyMaxxing: Дорожная карта',
-        subheading: 'План развития и масштабирования платформы',
+        heading: 'Бизнес-модель: Монетизация и тарифы',
+        subheading: 'Виральный рост снизу вверх (Product-Led Growth)',
         points: [
-          'Q3 2026: Интеграция с Kundelik.kz и Bilimland для прямой выгрузки оценок',
-          'Q4 2026: Поддержка олимпиадных языков C++ и JavaScript',
-          '2027: Мобильное приложение для экспресс-защиты и офлайн-режим',
-          'Готовность к пилотному внедрению в ведущих школах'
+          'Teacher Free: Бесплатный базовый тариф на 1 класс для любого учителя (виральный старт)',
+          'School Pro License: $150–$300 в месяц на всю школу (неограниченные классы и аналитика)',
+          'District / Enterprise: Контракты с управлениями образования и интеграция с Kundelik.kz',
+          'Экономика: низкий CAC за счет сарафанного радио в учительских чатах'
         ],
         bentoBlocks: [
-          { title: 'Интеграция', desc: 'Бесшовная синхронизация с электронными журналами', metric: 'Kundelik' },
-          { title: 'Языки', desc: 'Поддержка C++, Java, Web-технологий', metric: 'Multi-lang' },
-          { title: 'Пилот', desc: 'Запуск в пилотных классах НИШ и РФМШ', metric: '2026' }
+          { title: 'Free Teacher', desc: '1 класс бесплатно навсегда для тестирования учителем', metric: '$0' },
+          { title: 'School License', desc: 'Школьная годовая лицензия с неограниченным доступом', metric: '$150/мес' },
+          { title: 'Regional Contract', desc: 'Интеграция на уровне области / города под ключ', metric: 'B2G' }
         ]
       },
       content: (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
             <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-              <span className="text-[10px] text-emerald-400 font-bold">ЭТАП I // Q3 2026</span>
-              <div className="font-bold text-zinc-100 font-sans text-sm">Kundelik & Bilimland</div>
+              <span className="text-[10px] text-zinc-500 font-bold uppercase">PLG / ВХОДНОЙ БИЛЕТ</span>
+              <div className="text-2xl font-extrabold text-zinc-100">$0</div>
+              <h5 className="text-sm font-bold text-zinc-200 font-sans">Teacher Free</h5>
               <p className="text-zinc-400 font-sans leading-relaxed">
-                Автоматическая выгрузка баллов за устную защиту напрямую в государственные электронные журналы.
+                1 класс до 25 учеников бесплатно. Учитель пробует сервис на одном уроке и становится амбассадором в школе.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 space-y-2">
+              <span className="text-[10px] text-emerald-400 font-bold uppercase">ОСНОВНОЙ ДОХОД</span>
+              <div className="text-2xl font-extrabold text-emerald-400">$150–300<span className="text-xs text-zinc-400">/мес</span></div>
+              <h5 className="text-sm font-bold text-zinc-100 font-sans">School Pro</h5>
+              <p className="text-zinc-300 font-sans leading-relaxed">
+                Подписка на всё учебное заведение. Все классы 5–11, сводный дашборд завуча, архив аудио-ответов и брендирование.
               </p>
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-              <span className="text-[10px] text-emerald-400 font-bold">ЭТАП II // Q4 2026</span>
+              <span className="text-[10px] text-purple-400 font-bold uppercase">КОРПОРАТИВНЫЙ B2G</span>
+              <div className="text-2xl font-extrabold text-zinc-100">Контракт</div>
+              <h5 className="text-sm font-bold text-zinc-200 font-sans">District / Regional</h5>
+              <p className="text-zinc-400 font-sans leading-relaxed">
+                Интеграция с городскими системами, электронными дневниками (Kundelik), выделенный защищенный сервер в РК.
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs font-mono text-zinc-400 flex items-center justify-between">
+            <span>Модель PLG: Учитель находит платформу сам -&gt; школа покупает лицензию</span>
+            <span className="text-emerald-400 font-bold">HIGH LTV / LOW CAC</span>
+          </div>
+        </div>
+      )
+    },
+
+    // SLIDE 9: КОНКУРЕНТНЫЙ АНАЛИЗ
+    {
+      id: 9,
+      category: 'КОНКУРЕНТНЫЙ АНАЛИЗ // COMPARISON',
+      tag: 'SLIDE // 09',
+      title: 'Сравнение с существующими решениями',
+      subtitle: 'Ни одна платформа на рынке не решает проблему авторства через голосовую защиту',
+      canvaPrompt: {
+        heading: 'Конкурентный анализ: Почему мы вне конкуренции',
+        subheading: 'Сравнение со стандартными LMS и тестирующими системами',
+        points: [
+          'Яндекс.Учебник / Stepik: Только автотесты. Решаются копированием промпта в ChatGPT за 5 секунд.',
+          'Google Classroom / Moodle: Обычное файлохранилище. Ноль автоматизации устного опроса.',
+          'Антиплагиат: Текстовый анализ. Бессилен против уникальных промптов и другого стиля нейросети.',
+          'StudyMaxxing: Единственная система, объединяющая автопроверку и устный 15-секундный блиц.'
+        ],
+        bentoBlocks: [
+          { title: 'Stepik / Яндекс', desc: 'Только автотесты. Списывание из ChatGPT 100%', metric: 'Автотесты' },
+          { title: 'Moodle / Классрум', desc: 'Хранилище файлов. 0% проверки авторства', metric: 'Хранилище' },
+          { title: 'StudyMaxxing', desc: 'Сверка кода + 15с устный блиц + распознавание речи', metric: 'Winner' }
+        ]
+      },
+      content: (
+        <div className="space-y-4">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-mono text-xs border border-zinc-800 rounded-xl overflow-hidden">
+              <thead className="bg-zinc-900/80 text-zinc-400 uppercase text-[10px]">
+                <tr>
+                  <th className="py-2.5 px-3">Критерий оценки</th>
+                  <th className="py-2.5 px-3 text-zinc-400">Stepik / Яндекс</th>
+                  <th className="py-2.5 px-3 text-zinc-400">Google Classroom</th>
+                  <th className="py-2.5 px-3 text-emerald-400 font-bold">StudyMaxxing</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-800 bg-zinc-950/60 font-sans text-xs">
+                <tr>
+                  <td className="py-2.5 px-3 font-semibold text-zinc-200">Защита от ChatGPT / LLM</td>
+                  <td className="py-2.5 px-3 text-red-400">❌ 0% (легко обойти)</td>
+                  <td className="py-2.5 px-3 text-red-400">❌ Нет защиты</td>
+                  <td className="py-2.5 px-3 text-emerald-400 font-bold">✅ 15с голосовой блиц</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 px-3 font-semibold text-zinc-200">Устное объяснение кода</td>
+                  <td className="py-2.5 px-3 text-zinc-500">Отсутствует</td>
+                  <td className="py-2.5 px-3 text-zinc-500">Только вручную у доски</td>
+                  <td className="py-2.5 px-3 text-emerald-400 font-bold">✅ Web Speech API</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 px-3 font-semibold text-zinc-200">Толерантность к опечаткам</td>
+                  <td className="py-2.5 px-3 text-red-400">❌ Ошибка компиляции</td>
+                  <td className="py-2.5 px-3 text-zinc-500">На усмотрение</td>
+                  <td className="py-2.5 px-3 text-emerald-400 font-bold">✅ Прощение скобок/двоеточий</td>
+                </tr>
+                <tr>
+                  <td className="py-2.5 px-3 font-semibold text-zinc-200">Экономия времени учителя</td>
+                  <td className="py-2.5 px-3 text-zinc-300">Частичная</td>
+                  <td className="py-2.5 px-3 text-red-400">0% (ручная проверка)</td>
+                  <td className="py-2.5 px-3 text-emerald-400 font-bold">✅ -90% времени опроса</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="p-3 rounded-xl bg-zinc-900/80 border border-zinc-800 text-xs font-mono text-zinc-400 flex items-center justify-between">
+            <span>StudyMaxxing создает новую категорию: Oral Code Defense (Устная защита кода)</span>
+            <span className="text-emerald-400 font-bold">FIRST IN CLASS</span>
+          </div>
+        </div>
+      )
+    },
+
+    // SLIDE 10: БУДУЩЕЕ И ДОРОЖНАЯ КАРТА
+    {
+      id: 10,
+      category: 'БУДУЩЕЕ // ROADMAP & VISION',
+      tag: 'SLIDE // 10',
+      title: 'Будущее StudyMaxxing: 2026–2027',
+      subtitle: 'От пилотов в лицеях к единому республиканскому стандарту сдачи IT-заданий',
+      canvaPrompt: {
+        heading: 'Дорожная карта: Будущее StudyMaxxing',
+        subheading: 'План масштабирования и стратегические вехи',
+        points: [
+          'Q3 2026: Официальная интеграция с электронными журналами Kundelik.kz и Bilimland',
+          'Q4 2026: Поддержка C++, Java, JavaScript и олимпиадной информатики',
+          'Q1 2027: Мобильное приложение StudyMaxxing Voice для защиты со смартфона',
+          'Команда: Senior Full-Stack инженер и ведущие методисты олимпиадного программирования'
+        ],
+        bentoBlocks: [
+          { title: 'Q3 2026', desc: 'Автовыгрузка оценок в Kundelik.kz', metric: 'Журналы' },
+          { title: 'Q4 2026', desc: 'Олимпиадный модуль C++ и алгоритмы', metric: 'C++ / JS' },
+          { title: '2027', desc: 'Мобильный клиент экспресс-защиты', metric: 'Mobile' }
+        ]
+      },
+      content: (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <span className="text-[10px] text-emerald-400 font-bold uppercase">ЭТАП I // Q3 2026</span>
+              <div className="font-bold text-zinc-100 font-sans text-sm">Kundelik.kz & Bilimland</div>
+              <p className="text-zinc-400 font-sans leading-relaxed">
+                Прямая синхронизация с государственными журналами: оценка за устную защиту сразу попадает в ведомость.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
+              <span className="text-[10px] text-emerald-400 font-bold uppercase">ЭТАП II // Q4 2026</span>
               <div className="font-bold text-zinc-100 font-sans text-sm">Олимпиадный C++ & JS</div>
               <p className="text-zinc-400 font-sans leading-relaxed">
-                Расширение анализатора кода для олимпиадников по информатике и веб-разработчиков.
+                Расширение анализатора для олимпиадников и студентов колледжей (поддержка C++, Java, Web-технологий).
               </p>
             </div>
 
             <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 space-y-2">
-              <span className="text-[10px] text-emerald-400 font-bold">ЭТАП III // 2027</span>
-              <div className="font-bold text-zinc-100 font-sans text-sm">Мобильное приложение</div>
+              <span className="text-[10px] text-emerald-400 font-bold uppercase">ЭТАП III // 2027</span>
+              <div className="font-bold text-zinc-100 font-sans text-sm">StudyMaxxing Voice App</div>
               <p className="text-zinc-400 font-sans leading-relaxed">
-                Защита через микрофон смартфона прямо в школьном кабинете без необходимости отдельных гарнитур.
+                Нативное мобильное приложение: ученик защищает задание прямо с телефона за партой без гарнитуры.
               </p>
             </div>
           </div>
@@ -794,10 +814,10 @@ export const PresentationDeck: React.FC = () => {
           <div className="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <h4 className="text-base font-bold text-zinc-100 font-sans">
-                Готовы протестировать платформу в вашей школе?
+                Автоматизируйте академическую честность уже сегодня
               </h4>
               <p className="text-xs text-zinc-400 font-sans mt-0.5">
-                Интерактивная защита уже доступна прямо в текущем интерфейсе StudyMaxxing.
+                Платформа развернута и готова к пилотному запуску в вашей школе.
               </p>
             </div>
             <button
@@ -805,7 +825,7 @@ export const PresentationDeck: React.FC = () => {
               onClick={() => setCurrentView('teacher_dashboard')}
               className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs font-mono transition-all cursor-pointer shrink-0 shadow-lg shadow-emerald-500/20 flex items-center gap-2"
             >
-              <span>Открыть панель учителя</span>
+              <span>Открыть платформу</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -853,10 +873,10 @@ export const PresentationDeck: React.FC = () => {
           </button>
           <span className="text-zinc-600">|</span>
           <span className="font-bold text-zinc-200 tracking-wider">
-            STUDYMAXXING_DECK.PPTX
+            STUDYMAXXING_PITCH_DECK.PPTX
           </span>
           <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold">
-            10 SLIDES // 16:9
+            10 SLIDES // CANONICAL PITCH
           </span>
         </div>
 
@@ -917,7 +937,7 @@ export const PresentationDeck: React.FC = () => {
               style={{ pageBreakAfter: 'always', minHeight: '90vh' }}
             >
               <div className="flex justify-between items-center pb-4 border-b border-zinc-800 mb-6 font-mono text-xs text-zinc-400">
-                <span>STUDYMAXXING // ORAL_DEFENSE_DECK</span>
+                <span>STUDYMAXXING // PITCH_DECK</span>
                 <span>СЛАЙД {s.id} / 10</span>
               </div>
               <h2 className="text-3xl font-extrabold text-zinc-100 tracking-tight mb-2">{s.title}</h2>
@@ -980,7 +1000,7 @@ export const PresentationDeck: React.FC = () => {
             <div className="flex items-center gap-2">
               <span className="text-zinc-400">STUDYMAXXING</span>
               <span>//</span>
-              <span>ACADEMIC INTEGRITY ENGINE</span>
+              <span>STARTUP PITCH DECK</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1075,7 +1095,7 @@ export const PresentationDeck: React.FC = () => {
               >
                 <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 mb-1.5">
                   <span className="font-bold text-emerald-400">СЛАЙД {s.id}</span>
-                  <span>16:9</span>
+                  <span>{s.category.split('//')[0].trim()}</span>
                 </div>
                 <h5 className="text-xs font-bold text-zinc-200 line-clamp-1 mb-1 font-sans">
                   {s.title}
@@ -1104,10 +1124,10 @@ export const PresentationDeck: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-zinc-100">
-                    Инструкция и готовые тексты для Canva (10 слайдов)
+                    Структура Pitch Deck для Canva (10 слайдов)
                   </h3>
                   <p className="text-[11px] text-zinc-500 font-mono">
-                    CANVA_BLUEPRINT // 100% MATCH DARK THEME (#09090b + emerald #10b981)
+                    CANVA_PITCH_DECK // ТЕМА, ПРОБЛЕМА, РЕШЕНИЕ, ТЕХСТЕК, БИЗНЕС-МОДЕЛЬ, БУДУЩЕЕ
                   </p>
                 </div>
               </div>
@@ -1122,13 +1142,13 @@ export const PresentationDeck: React.FC = () => {
             <div className="overflow-y-auto my-4 space-y-4 pr-1 text-xs">
               <div className="p-3.5 rounded-xl bg-purple-950/20 border border-purple-500/30 text-purple-300 font-mono space-y-1">
                 <span className="font-bold block text-zinc-100 text-[11px] uppercase">
-                  Цветовая палитра и шрифты для шаблона Canva:
+                  Цветовая палитра и шрифты для Canva:
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-[10px]">
                   <div>Фон: <strong>#09090b</strong> (Zinc-950)</div>
                   <div>Карточки: <strong>#18181b</strong> (Zinc-900)</div>
                   <div>Акцент: <strong>#10b981</strong> (Emerald)</div>
-                  <div>Шрифты: <strong>Inter / Geist / JetBrains Mono</strong></div>
+                  <div>Шрифты: <strong>Inter / Space Grotesk / JetBrains Mono</strong></div>
                 </div>
               </div>
 
@@ -1161,7 +1181,7 @@ export const PresentationDeck: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between pt-3 border-t border-zinc-800 text-xs font-mono">
-              <span className="text-zinc-500">10 слайдов подготовлены для переноса</span>
+              <span className="text-zinc-500">10 слайдов Pitch Deck подготовлены</span>
               <button
                 type="button"
                 onClick={handleCopyAllSlidesCanva}
