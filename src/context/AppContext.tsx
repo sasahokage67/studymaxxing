@@ -20,6 +20,7 @@ import {
 } from '../services/mockData';
 import { AIService } from '../services/aiService';
 import { Language, TRANSLATIONS } from '../i18n/translations';
+import { getNeutralAvatarUrl, sanitizeAvatarUrl } from '../utils/avatar';
 
 interface AppContextType {
   currentUser: User;
@@ -203,7 +204,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             (u: User) => u.username.toLowerCase() === 'sasahokage'
           );
           if (hasSasahokage) {
-            return parsed;
+            return parsed.map((u: User) => ({
+              ...u,
+              avatarUrl: sanitizeAvatarUrl(
+                u.avatarUrl,
+                u.username,
+                u.role === 'teacher' ? 'shapes' : 'identicon'
+              ),
+            }));
           }
         }
       } catch (e) {
@@ -255,7 +263,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ) {
           return SEEDED_USERS[0];
         }
-        return parsed;
+        return {
+          ...parsed,
+          avatarUrl: sanitizeAvatarUrl(
+            parsed.avatarUrl,
+            parsed.username,
+            parsed.role === 'teacher' ? 'shapes' : 'identicon'
+          ),
+        };
       } catch (e) {
         console.error(e);
       }
@@ -432,10 +447,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       role: data.role,
       grade: data.role === 'student' ? (data.grade || 8) : undefined,
       email: `${cleanUser.toLowerCase().replace(/[^a-z0-9_.-]/g, '_')}@school.kz`,
-      avatarUrl:
-        data.role === 'teacher'
-          ? 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80'
-          : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+      avatarUrl: getNeutralAvatarUrl(
+        cleanUser,
+        data.role === 'teacher' ? 'shapes' : 'identicon'
+      ),
     };
 
     const updated = [newUser, ...users];
@@ -484,11 +499,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateUserAvatar = (avatarUrl: string) => {
-    const updatedUser = { ...currentUser, avatarUrl };
+    const safeAvatar = sanitizeAvatarUrl(
+      avatarUrl || '',
+      currentUser.username,
+      currentUser.role === 'teacher' ? 'shapes' : 'identicon'
+    );
+    const updatedUser = { ...currentUser, avatarUrl: safeAvatar };
     setCurrentUser(updatedUser);
     localStorage.setItem('lp_current_user', JSON.stringify(updatedUser));
 
-    const updatedUsers = users.map((u) => (u.id === currentUser.id ? { ...u, avatarUrl } : u));
+    const updatedUsers = users.map((u) => (u.id === currentUser.id ? { ...u, avatarUrl: safeAvatar } : u));
     setUsers(updatedUsers);
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
   };
@@ -578,7 +598,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             classId,
             className,
             email: `${cleanUser.toLowerCase()}@school.kz`,
-            avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+            avatarUrl: getNeutralAvatarUrl(cleanUser, 'identicon'),
             school: currentUser.school || 'РФМШ г. Алматы'
           };
           createdStudentIds.push(studentId);
@@ -658,7 +678,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           classId: targetClass.id,
           className: targetClass.name,
           email: `${cleanUser.toLowerCase()}@school.kz`,
-          avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+          avatarUrl: getNeutralAvatarUrl(cleanUser, 'identicon'),
           school: currentUser.school || 'РФМШ г. Алматы'
         };
         addedIds.push(studentId);

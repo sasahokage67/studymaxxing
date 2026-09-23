@@ -17,6 +17,7 @@ import {
 import { CreateClassModal } from './CreateClassModal';
 import { ClassDetailModal } from './ClassDetailModal';
 import { SchoolClass } from '../../types';
+import { sanitizeAvatarUrl, FALLBACK_AVATAR_SVG } from '../../utils/avatar';
 
 export const TeacherDashboard: React.FC = () => {
   const { 
@@ -346,12 +347,12 @@ export const TeacherDashboard: React.FC = () => {
                         {classStudents.slice(0, 5).map((st) => (
                           <img
                             key={st.id}
-                            src={
-                              st.avatarUrl ||
-                              'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=60&auto=format&fit=crop&q=80'
-                            }
+                            src={sanitizeAvatarUrl(st.avatarUrl, st.username, 'identicon')}
                             alt={st.name}
-                            className="inline-block h-6 w-6 rounded-full ring-2 ring-zinc-950 object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = FALLBACK_AVATAR_SVG;
+                            }}
+                            className="inline-block h-6 w-6 rounded-full ring-2 ring-zinc-950 object-contain p-0.5 bg-zinc-900"
                             title={st.name}
                           />
                         ))}

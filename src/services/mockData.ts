@@ -8,7 +8,7 @@ export const SEEDED_USERS: User[] = [
     name: 'Учитель (sasahokage)',
     email: 'sasahokage@studymaxxing.kz',
     role: 'teacher',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80',
+    avatarUrl: 'https://api.dicebear.com/7.x/shapes/svg?seed=sasahokage',
     school: 'НИШ ФМН г. Астана',
     schoolWebsite: 'https://ast.nis.edu.kz',
   },
@@ -22,7 +22,7 @@ export const SEEDED_USERS: User[] = [
     grade: 8,
     classId: 'cls_cs_8',
     className: '8 «А» класс',
-    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80',
+    avatarUrl: 'https://api.dicebear.com/7.x/identicon/svg?seed=arman',
     school: 'РФМШ г. Алматы',
     schoolWebsite: 'https://almaty.fizmat.kz',
   }

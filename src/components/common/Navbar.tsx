@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { LogOut, LogIn, User as UserIcon } from 'lucide-react';
 import { Language } from '../../i18n/translations';
+import { sanitizeAvatarUrl, FALLBACK_AVATAR_SVG } from '../../utils/avatar';
 
 export const Navbar: React.FC = () => {
   const { 
@@ -126,12 +127,19 @@ export const Navbar: React.FC = () => {
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900/70 hover:border-emerald-500/50 hover:bg-zinc-900 transition-all cursor-pointer group"
                 title={t('profile_open_tooltip') || 'Личный кабинет'}
               >
-                <div className="w-5 h-5 rounded-full overflow-hidden bg-zinc-800 border border-zinc-700 shrink-0 flex items-center justify-center group-hover:border-emerald-500/60 transition-colors">
-                  {currentUser.avatarUrl ? (
-                    <img src={currentUser.avatarUrl} alt={currentUser.username} className="w-full h-full object-cover" />
-                  ) : (
-                    <UserIcon className="w-3 h-3 text-zinc-400" />
-                  )}
+                <div className="w-5 h-5 rounded-full overflow-hidden bg-zinc-900 border border-zinc-700 shrink-0 flex items-center justify-center group-hover:border-emerald-500/60 transition-colors">
+                  <img
+                    src={sanitizeAvatarUrl(
+                      currentUser.avatarUrl,
+                      currentUser.username,
+                      currentUser.role === 'teacher' ? 'shapes' : 'identicon'
+                    )}
+                    alt={currentUser.username}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = FALLBACK_AVATAR_SVG;
+                    }}
+                    className="w-full h-full object-contain p-0.5 bg-zinc-950"
+                  />
                 </div>
                 <span className="font-mono text-xs text-zinc-200 group-hover:text-zinc-100 font-medium max-w-[90px] sm:max-w-[120px] truncate">
                   {currentUser.username || currentUser.name}

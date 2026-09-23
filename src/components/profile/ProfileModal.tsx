@@ -18,18 +18,18 @@ import {
   Building2,
   Globe,
   MapPin,
-  Check
+  Check,
+  RotateCcw,
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import { School } from '../../types';
 import { getSavedSchools, saveCustomSchool } from '../../services/schoolData';
-
-const AVATAR_PRESETS = [
-  { label: 'Преподаватель', url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=160&auto=format&fit=crop&q=80' },
-  { label: 'Нейтральный ученик', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=160&auto=format&fit=crop&q=80' },
-  { label: 'Ученик', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80' },
-  { label: 'Ученица', url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=160&auto=format&fit=crop&q=80' },
-  { label: 'Разработчик', url: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=160&auto=format&fit=crop&q=80' },
-];
+import {
+  NEUTRAL_AVATAR_PRESETS,
+  getNeutralAvatarUrl,
+  FALLBACK_AVATAR_SVG,
+} from '../../utils/avatar';
 
 export const ProfileModal: React.FC = () => {
   const {
@@ -227,16 +227,18 @@ export const ProfileModal: React.FC = () => {
           <div className="flex items-start gap-4 sm:gap-5">
             {/* Avatar with Camera upload button */}
             <div className="relative group shrink-0">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-zinc-800 border-2 border-zinc-700 shadow-md flex items-center justify-center relative">
-                {currentUser.avatarUrl ? (
-                  <img
-                    src={currentUser.avatarUrl}
-                    alt={currentUser.username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <UserIcon className="w-8 h-8 text-zinc-400" />
-                )}
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-zinc-900 border-2 border-zinc-700 shadow-md flex items-center justify-center relative">
+                <img
+                  src={
+                    currentUser.avatarUrl ||
+                    getNeutralAvatarUrl(currentUser.username, currentRole === 'teacher' ? 'shapes' : 'identicon')
+                  }
+                  alt={currentUser.username}
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = FALLBACK_AVATAR_SVG;
+                  }}
+                  className="w-full h-full object-contain p-1 bg-zinc-950"
+                />
 
                 {/* Hover overlay to change avatar */}
                 <button
@@ -285,15 +287,15 @@ export const ProfileModal: React.FC = () => {
                 <span className="text-zinc-400">{currentUser.email}</span>
               </div>
 
-              {/* Quick Avatar Presets Row */}
-              <div className="mt-2.5 flex items-center gap-2 text-xs font-mono">
+              {/* Quick Avatar Controls Row */}
+              <div className="mt-2.5 flex items-center gap-2 text-xs font-mono flex-wrap">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <Camera className="w-3 h-3 text-emerald-400" />
-                  <span>Загрузить аватар</span>
+                  <span>Загрузить фото</span>
                 </button>
 
                 <button
@@ -301,27 +303,71 @@ export const ProfileModal: React.FC = () => {
                   onClick={() => setShowAvatarPresets(!showAvatarPresets)}
                   className="px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 text-[11px] transition-colors cursor-pointer"
                 >
-                  Пресеты
+                  Нейтральные пресеты
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const randomNeutral = getNeutralAvatarUrl(
+                      `${currentUser.username}_${Date.now().toString(36)}`,
+                      currentRole === 'teacher' ? 'shapes' : 'identicon'
+                    );
+                    updateUserAvatar(randomNeutral);
+                  }}
+                  className="px-2 py-1 rounded border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-emerald-400 text-[11px] transition-colors flex items-center gap-1 cursor-pointer"
+                  title="Сгенерировать случайный нейтральный аватар"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Случайный</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const defaultNeutral = getNeutralAvatarUrl(
+                      currentUser.username,
+                      currentRole === 'teacher' ? 'shapes' : 'identicon'
+                    );
+                    updateUserAvatar(defaultNeutral);
+                  }}
+                  className="px-2 py-1 rounded border border-zinc-800 hover:border-red-900/50 text-zinc-500 hover:text-red-400 text-[11px] transition-colors flex items-center gap-1 cursor-pointer"
+                  title="Убрать аватар и вернуть нейтральный"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Убрать аву</span>
                 </button>
               </div>
 
               {/* Avatar presets gallery popdown */}
               {showAvatarPresets && (
-                <div className="mt-3 p-3 bg-zinc-900 border border-zinc-800 rounded-lg flex items-center gap-2 overflow-x-auto">
-                  {AVATAR_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        updateUserAvatar(preset.url);
-                        setShowAvatarPresets(false);
-                      }}
-                      className="w-10 h-10 rounded-lg overflow-hidden border border-zinc-700 hover:border-emerald-500 hover:scale-105 transition-all shrink-0 cursor-pointer"
-                      title={preset.label}
-                    >
-                      <img src={preset.url} alt={preset.label} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
+                <div className="mt-3 p-3 bg-zinc-900 border border-zinc-800 rounded-lg">
+                  <div className="text-[10px] uppercase font-mono text-zinc-500 mb-2 font-semibold">
+                    Нейтральные аватарки без лиц
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {NEUTRAL_AVATAR_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => {
+                          updateUserAvatar(preset.url);
+                          setShowAvatarPresets(false);
+                        }}
+                        className="w-10 h-10 rounded-lg overflow-hidden border border-zinc-700 hover:border-emerald-500 hover:scale-105 transition-all shrink-0 cursor-pointer bg-zinc-950 p-0.5"
+                        title={preset.label}
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.label}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = FALLBACK_AVATAR_SVG;
+                          }}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

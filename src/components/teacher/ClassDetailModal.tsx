@@ -15,6 +15,7 @@ import {
   UserPlus
 } from 'lucide-react';
 import { SchoolClass, User } from '../../types';
+import { sanitizeAvatarUrl, FALLBACK_AVATAR_SVG } from '../../utils/avatar';
 
 interface ClassDetailModalProps {
   schoolClass: SchoolClass | null;
@@ -326,12 +327,12 @@ export const ClassDetailModal: React.FC<ClassDetailModalProps> = ({
                           <td className="py-3 px-4 font-bold text-emerald-400">
                             <div className="flex items-center gap-2.5">
                               <img
-                                src={
-                                  st.avatarUrl ||
-                                  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=60&auto=format&fit=crop&q=80'
-                                }
+                                src={sanitizeAvatarUrl(st.avatarUrl, st.username, 'identicon')}
                                 alt={st.username}
-                                className="w-7 h-7 rounded-full object-cover border border-zinc-700 shrink-0"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src = FALLBACK_AVATAR_SVG;
+                                }}
+                                className="w-7 h-7 rounded-full object-contain p-0.5 bg-zinc-900 border border-zinc-700 shrink-0"
                               />
                               <span className="text-emerald-300">@{st.username}</span>
                             </div>
