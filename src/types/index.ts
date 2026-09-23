@@ -18,6 +18,7 @@ export interface User {
   avatarUrl?: string;
   school?: string;
   schoolWebsite?: string;
+  grade?: number; // 5, 6, 7, 8, 9, 10, 11
 }
 
 export type SubmissionStatus = 
@@ -34,6 +35,7 @@ export interface Assignment {
   id: string;
   classId: string;
   className: string;
+  grade?: number; // 5, 6, 7, 8, 9, 10, 11
   title: string;
   description: string;
   submissionType: 'pdf' | 'docx' | 'zip' | 'github' | 'code' | 'text';

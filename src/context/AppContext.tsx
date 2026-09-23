@@ -48,8 +48,9 @@ interface AppContextType {
   updateUserPassword: (oldPassword: string, newPassword: string) => { success: boolean; error?: string };
   updateUserAvatar: (avatarUrl: string) => void;
   updateUserSchool: (school: string, schoolWebsite?: string) => void;
+  updateUserGrade: (grade: number) => void;
   login: (username: string, password: string) => { success: boolean; error?: string };
-  register: (data: { username: string; password: string; name: string; role: UserRole }) => { success: boolean; error?: string };
+  register: (data: { username: string; password: string; name: string; role: UserRole; grade?: number }) => { success: boolean; error?: string };
   logout: () => void;
   selectAssignment: (id: string | null) => void;
   selectSubmission: (id: string | null) => void;
@@ -124,13 +125,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((a: Assignment) => {
+          const map = new Map<string, Assignment>();
+          // Load parsed assignments first
+          parsed.forEach((a: Assignment) => {
             const seed = SEEDED_ASSIGNMENTS.find((s) => s.id === a.id);
-            if (seed && !a.referenceCode) {
-              return { ...a, referenceCode: seed.referenceCode, starterTemplate: seed.starterTemplate };
+            if (seed) {
+              map.set(a.id, {
+                ...a,
+                grade: a.grade || seed.grade,
+                className: a.className || seed.className,
+                title: a.title || seed.title,
+                referenceCode: a.referenceCode || seed.referenceCode,
+                starterTemplate: a.id === 'asg_game' ? seed.starterTemplate : (a.starterTemplate || seed.starterTemplate)
+              });
+            } else {
+              map.set(a.id, a);
             }
-            return a;
           });
+          // Ensure all SEEDED_ASSIGNMENTS for grades 5-11 exist
+          SEEDED_ASSIGNMENTS.forEach((s) => {
+            if (!map.has(s.id)) {
+              map.set(s.id, s);
+            }
+          });
+          return Array.from(map.values());
         }
       } catch (e) {}
     }
@@ -212,6 +230,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     password: string;
     name: string;
     role: UserRole;
+    grade?: number;
   }): { success: boolean; error?: string } => {
     const cleanUser = data.username.trim();
     const cleanPass = data.password.trim();
@@ -235,6 +254,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       password: cleanPass,
       name: cleanName,
       role: data.role,
+      grade: data.role === 'student' ? (data.grade || 8) : undefined,
       email: `${cleanUser.toLowerCase().replace(/[^a-z0-9]/g, '_')}@studymaxxing.kz`,
       avatarUrl:
         data.role === 'teacher'
@@ -307,6 +327,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
   };
 
+  const updateUserGrade = (grade: number) => {
+    const updatedUser = { ...currentUser, grade };
+    setCurrentUser(updatedUser);
+    localStorage.setItem('lp_current_user', JSON.stringify(updatedUser));
+
+    const updatedUsers = users.map((u) => (u.id === currentUser.id ? { ...u, grade } : u));
+    setUsers(updatedUsers);
+    localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
+  };
+
   const logout = () => {
     setIsAuthenticated(false);
     setIsProfileModalOpen(false);
@@ -336,10 +366,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createAssignment = (data: Partial<Assignment>): Assignment => {
+    const asgGrade = data.grade || 8;
     const newAssignment: Assignment = {
       id: `asg_${Date.now()}`,
-      classId: 'cls_it_club',
-      className: '10 «А» класс · IT-Кружок программирования',
+      classId: data.classId || `cls_cs_${asgGrade}`,
+      className: data.className || `Информатика ${asgGrade} «А» класс`,
+      grade: asgGrade,
       title: data.title || 'Новое задание по Python',
       description: data.description || '',
       submissionType: data.submissionType || 'code',
@@ -597,6 +629,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateUserPassword,
         updateUserAvatar,
         updateUserSchool,
+        updateUserGrade,
         login,
         register,
         logout,

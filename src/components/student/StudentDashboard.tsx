@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Play, CheckCircle2, Clock, FileCode, Award } from 'lucide-react';
+import { Play, CheckCircle2, Clock, FileCode, Award, Filter, GraduationCap } from 'lucide-react';
 
 export const StudentDashboard: React.FC = () => {
   const { 
@@ -14,14 +14,33 @@ export const StudentDashboard: React.FC = () => {
     t 
   } = useApp();
 
+  const userGrade = currentUser.grade || 8;
+  const [selectedGradeFilter, setSelectedGradeFilter] = useState<number | 'all'>(userGrade);
+
+  useEffect(() => {
+    if (currentUser.grade) {
+      setSelectedGradeFilter(currentUser.grade);
+    }
+  }, [currentUser.grade]);
+
+  const filteredAssignments = assignments.filter((asg) => {
+    if (selectedGradeFilter === 'all') return true;
+    return asg.grade === selectedGradeFilter;
+  });
+
   return (
     <div className="max-w-[1380px] mx-auto px-4 sm:px-8 py-8 font-mono">
       {/* Welcome Greeting */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-5 mb-8">
         <div>
-          <span className="text-xs uppercase text-zinc-500 font-semibold tracking-wider">
-            {t('student_portal')}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs uppercase text-zinc-500 font-semibold tracking-wider">
+              {t('student_portal')}
+            </span>
+            <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold">
+              {userGrade} класс
+            </span>
+          </div>
           <h1 className="text-xl sm:text-2xl font-bold font-sans text-zinc-100 tracking-tight mt-0.5">
             {t('student_welcome')}, {currentUser.name}
           </h1>
@@ -39,6 +58,61 @@ export const StudentDashboard: React.FC = () => {
         </button>
       </div>
 
+      {/* Grade Filter Tabs */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Фильтр заданий по классам (5–11)</span>
+          </div>
+          <span className="text-[11px] text-zinc-500">
+            Отображаются задания: {selectedGradeFilter === 'all' ? 'все классы' : `${selectedGradeFilter} класс`}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setSelectedGradeFilter(userGrade)}
+            className={`px-3 py-1.5 rounded-lg border font-medium transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+              selectedGradeFilter === userGrade
+                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold shadow-sm'
+                : 'bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+            }`}
+          >
+            <GraduationCap className="w-3.5 h-3.5" />
+            <span>Мой класс ({userGrade} кл.)</span>
+          </button>
+
+          {[5, 6, 7, 8, 9, 10, 11].map((gradeNum) => (
+            <button
+              key={gradeNum}
+              type="button"
+              onClick={() => setSelectedGradeFilter(gradeNum)}
+              className={`px-3 py-1.5 rounded-lg border font-mono font-medium transition-all whitespace-nowrap cursor-pointer ${
+                selectedGradeFilter === gradeNum
+                  ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold shadow-sm'
+                  : 'bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+              }`}
+            >
+              {gradeNum} класс
+            </button>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => setSelectedGradeFilter('all')}
+            className={`px-3 py-1.5 rounded-lg border font-medium transition-all whitespace-nowrap cursor-pointer ${
+              selectedGradeFilter === 'all'
+                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold shadow-sm'
+                : 'bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+            }`}
+          >
+            Все классы ({assignments.length})
+          </button>
+        </div>
+      </div>
+
       {/* Active Assignment Cards */}
       <div className="mb-10 space-y-4">
         <div className="text-xs font-semibold text-zinc-300 uppercase tracking-wider flex items-center gap-2">
@@ -46,43 +120,63 @@ export const StudentDashboard: React.FC = () => {
           <span>{t('active_defenses')}</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {assignments.map((asg) => {
-            const userSub = submissions.find(
-              (sub) => sub.assignmentId === asg.id && (sub.studentId === currentUser.id || sub.studentName === currentUser.name)
-            );
-            const session = userSub?.defenseSessionId ? defenseSessions[userSub.defenseSessionId] : undefined;
-            const score = session?.overallScore;
-            const isCompleted = !!userSub && (session?.status === 'verified' || session?.status === 'teacher_review' || (score !== undefined));
-            const isAutoApproved = (score || 0) >= 85;
-            const needsTeacher = (score || 0) <= 65 && isCompleted;
+        {filteredAssignments.length === 0 ? (
+          <div className="border border-dashed border-zinc-800 rounded-xl p-8 text-center bg-zinc-950">
+            <p className="text-zinc-400 text-xs font-sans">
+              Для выбранного {selectedGradeFilter} класса пока нет опубликованных заданий.
+            </p>
+            <button
+              onClick={() => setSelectedGradeFilter('all')}
+              className="mt-3 px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-xs text-zinc-300"
+            >
+              Показать задания всех классов
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredAssignments.map((asg) => {
+              const userSub = submissions.find(
+                (sub) => sub.assignmentId === asg.id && (sub.studentId === currentUser.id || sub.studentName === currentUser.name)
+              );
+              const session = userSub?.defenseSessionId ? defenseSessions[userSub.defenseSessionId] : undefined;
+              const score = session?.overallScore;
+              const isCompleted = !!userSub && (session?.status === 'verified' || session?.status === 'teacher_review' || (score !== undefined));
+              const isAutoApproved = (score || 0) >= 85;
+              const needsTeacher = (score || 0) <= 65 && isCompleted;
 
-            return (
-              <div
-                key={asg.id}
-                className="border border-zinc-800 bg-zinc-950 rounded-xl p-5 flex flex-col justify-between hover:border-zinc-700 transition-colors shadow-sm"
-              >
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="text-zinc-500 font-mono text-[11px]">{asg.className}</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-mono font-semibold ${
-                      !isCompleted
-                        ? 'border border-amber-500/30 bg-amber-500/10 text-amber-300'
-                        : isAutoApproved
-                        ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
-                        : needsTeacher
-                        ? 'border border-red-500/40 bg-red-500/10 text-red-400'
-                        : 'border border-blue-500/40 bg-blue-500/10 text-blue-300'
-                    }`}>
-                      {!isCompleted
-                        ? 'Готово к сдаче'
-                        : isAutoApproved
-                        ? 'ДЗ сдано (85%+)'
-                        : needsTeacher
-                        ? 'Проверка учителя'
-                        : 'На утверждении'}
-                    </span>
-                  </div>
+              return (
+                <div
+                  key={asg.id}
+                  className="border border-zinc-800 bg-zinc-950 rounded-xl p-5 flex flex-col justify-between hover:border-zinc-700 transition-colors shadow-sm"
+                >
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-2">
+                      <div className="flex items-center gap-2">
+                        {asg.grade && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                            {asg.grade} класс
+                          </span>
+                        )}
+                        <span className="text-zinc-500 font-mono text-[11px] truncate max-w-[180px]">{asg.className}</span>
+                      </div>
+                      <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-mono font-semibold ${
+                        !isCompleted
+                          ? 'border border-amber-500/30 bg-amber-500/10 text-amber-300'
+                          : isAutoApproved
+                          ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
+                          : needsTeacher
+                          ? 'border border-red-500/40 bg-red-500/10 text-red-400'
+                          : 'border border-blue-500/40 bg-blue-500/10 text-blue-300'
+                      }`}>
+                        {!isCompleted
+                          ? 'Готово к сдаче'
+                          : isAutoApproved
+                          ? 'ДЗ сдано (85%+)'
+                          : needsTeacher
+                          ? 'Проверка учителя'
+                          : 'На утверждении'}
+                      </span>
+                    </div>
 
                   <h3 className="text-sm font-semibold font-sans text-zinc-100">{asg.title}</h3>
                   <p className="text-xs text-zinc-400 mt-1 font-sans line-clamp-2">{asg.description}</p>
@@ -127,7 +221,8 @@ export const StudentDashboard: React.FC = () => {
               </div>
             );
           })}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* History */}
@@ -149,21 +244,59 @@ export const StudentDashboard: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/80">
-              <tr className="hover:bg-zinc-900/30">
-                <td className="py-3 px-4 font-sans font-medium text-zinc-200">
-                  Python: Telegram-бот для школьной викторины
-                </td>
-                <td className="py-3 px-4 text-zinc-400">22 Сен, 2026</td>
-                <td className="py-3 px-4 font-bold text-zinc-100">88%</td>
-                <td className="py-3 px-4">
-                  <span className="px-2 py-0.5 rounded border border-zinc-700 bg-zinc-900 text-zinc-300 text-[10px] uppercase">
-                    {t('completed')}
-                  </span>
-                </td>
-                <td className="py-3 px-4 font-sans text-zinc-400 max-w-xs truncate">
-                  "Отличная защита, Арман! Ты прекрасно понимаешь, как работает словарь."
-                </td>
-              </tr>
+              {(() => {
+                const userSubs = submissions.filter(
+                  (s) => s.studentId === currentUser.id || s.studentName === currentUser.name
+                );
+                if (userSubs.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan={5} className="py-6 text-center text-zinc-500 font-mono text-xs">
+                        У вас пока нет завершенных защит. Выберите задание выше и пройдите блиц-защиту!
+                      </td>
+                    </tr>
+                  );
+                }
+                return userSubs.map((sub) => {
+                  const asg = assignments.find((a) => a.id === sub.assignmentId);
+                  const session = sub.defenseSessionId ? defenseSessions[sub.defenseSessionId] : undefined;
+                  const score = session?.overallScore ?? 88;
+                  const dateStr = new Date(sub.submittedAt).toLocaleDateString('ru-RU', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  });
+
+                  return (
+                    <tr key={sub.id} className="hover:bg-zinc-900/30 transition-colors">
+                      <td className="py-3 px-4 font-sans font-medium text-zinc-200">
+                        <div className="flex items-center gap-2">
+                          {asg?.grade && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-zinc-800 text-zinc-300 border border-zinc-700">
+                              {asg.grade} кл.
+                            </span>
+                          )}
+                          <span>{asg?.title || sub.fileName}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-zinc-400 font-mono">{dateStr}</td>
+                      <td className="py-3 px-4 font-bold font-mono">
+                        <span className={score >= 85 ? 'text-emerald-400' : score <= 65 ? 'text-red-400' : 'text-blue-400'}>
+                          {score}%
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] uppercase font-mono font-semibold">
+                          {t('completed')}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-sans text-zinc-400 max-w-xs truncate">
+                        {session?.teacherReview?.studentFeedback || '«Отличная устная защита! Код разобран без замечаний.»'}
+                      </td>
+                    </tr>
+                  );
+                });
+              })()}
             </tbody>
           </table>
         </div>

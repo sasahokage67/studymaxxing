@@ -7,6 +7,7 @@ export const AssignmentCreator: React.FC = () => {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [grade, setGrade] = useState<number>(8);
   const [submissionType, setSubmissionType] = useState<'github' | 'code' | 'pdf'>('code');
   const [questionCount, setQuestionCount] = useState<number>(3);
   const [answerMode, setAnswerMode] = useState<'voice_or_text' | 'voice_only' | 'text_only'>('voice_or_text');
@@ -24,6 +25,8 @@ export const AssignmentCreator: React.FC = () => {
     createAssignment({
       title,
       description,
+      grade,
+      className: `Информатика ${grade} «А» класс`,
       submissionType,
       questionCount,
       answerMode,
@@ -60,6 +63,30 @@ export const AssignmentCreator: React.FC = () => {
           <h2 className="text-xs font-mono uppercase text-zinc-400 font-semibold tracking-wider">
             1. General Assignment Details
           </h2>
+
+          {/* Target Grade Selector (5-11) */}
+          <div>
+            <label className="block text-xs font-mono text-zinc-400 mb-1.5 flex items-center justify-between">
+              <span>ЦЕЛЕВОЙ КЛАСС (5–11 КЛАСС):</span>
+              <span className="text-emerald-400 font-semibold">{grade} класс</span>
+            </label>
+            <div className="grid grid-cols-7 gap-1.5">
+              {[5, 6, 7, 8, 9, 10, 11].map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setGrade(g)}
+                  className={`py-2 text-center rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
+                    grade === g
+                      ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-sm'
+                      : 'border-white/10 bg-zinc-950 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                  }`}
+                >
+                  {g} кл.
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div>
             <label className="block text-xs font-mono text-zinc-400 mb-1">

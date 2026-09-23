@@ -502,8 +502,13 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
                         <Code2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                         <span className="truncate">{asg.title}</span>
                       </div>
-                      <span className="text-[9px] text-zinc-500 font-mono flex-shrink-0">
-                        {asg.referenceCode ? '✓ Эталон' : asg.className.slice(0, 10)}
+                      <span className="text-[9px] text-zinc-400 font-mono flex-shrink-0 flex items-center gap-1.5">
+                        {asg.grade && (
+                          <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-emerald-400 border border-emerald-500/20 font-semibold">
+                            {asg.grade} кл.
+                          </span>
+                        )}
+                        {asg.referenceCode && <span className="text-zinc-500">✓ Эталон</span>}
                       </span>
                     </button>
                   ))}

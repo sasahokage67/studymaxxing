@@ -42,6 +42,7 @@ export const ProfileModal: React.FC = () => {
     updateUserPassword,
     updateUserAvatar,
     updateUserSchool,
+    updateUserGrade,
     t
   } = useApp();
 
@@ -438,10 +439,35 @@ export const ProfileModal: React.FC = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono">
-                    <div className="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-lg">
-                      <div className="text-[11px] text-zinc-500 uppercase">Класс</div>
-                      <div className="text-lg font-bold text-zinc-100 mt-1 truncate">10 «А» класс</div>
-                      <div className="text-[10px] text-zinc-500 mt-0.5">IT-Кружок</div>
+                    <div className="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-lg flex flex-col justify-between">
+                      <div>
+                        <div className="text-[11px] text-zinc-500 uppercase flex items-center justify-between">
+                          <span>Класс</span>
+                          <span className="text-emerald-400 font-bold">{currentUser.grade || 8} класс</span>
+                        </div>
+                        <div className="text-base font-bold text-zinc-100 mt-1 truncate">
+                          {currentUser.grade || 8} «А» класс
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-zinc-800/80">
+                        <div className="text-[9px] text-zinc-500 uppercase mb-1">Сменить класс:</div>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {[5, 6, 7, 8, 9, 10, 11].map((g) => (
+                            <button
+                              key={g}
+                              type="button"
+                              onClick={() => updateUserGrade(g)}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-all cursor-pointer ${
+                                (currentUser.grade || 8) === g
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50'
+                                  : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700/50'
+                              }`}
+                            >
+                              {g}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                     <div className="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-lg">
                       <div className="text-[11px] text-zinc-500 uppercase">Сдано работ</div>

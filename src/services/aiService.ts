@@ -242,10 +242,15 @@ export class AIService {
     // Deep comparison with teacher benchmark
     const codeComparison = this.compareWithTeacherReference(code, referenceCode);
 
-    // Heuristic AST-like code inspection for school programs
-    const isGuessGame = fileName.includes('guess') || code.includes('secret') || (code.includes('guess') && code.includes('input'));
+    // Heuristic AST-like code inspection for school programs (grades 5 to 11)
+    const isGreeting = fileName.includes('5') || fileName.includes('greet') || (code.includes('input') && (code.includes('Привет') || code.includes('зовут')));
+    const isSum = fileName.includes('6') || fileName.includes('sum') || (code.includes('a + b') && code.includes('int(input'));
+    const isSignCheck = fileName.includes('7') || fileName.includes('sign') || (code.includes('x > 0') && (code.includes('Положительное') || code.includes('Отрицательное')));
+    const isGuessGame = fileName.includes('8') || fileName.includes('guess') || code.includes('secret') || (code.includes('guess') && code.includes('input'));
+    const isEvenCounter = fileName.includes('9') || fileName.includes('even') || code.includes('% 2') || (code.includes('numbers') && code.includes('count'));
+    const isAreaFunc = fileName.includes('10') || fileName.includes('area') || code.includes('rectangle_area') || (code.includes('def ') && code.includes('w * h'));
+    const isPhoneBook = fileName.includes('11') || fileName.includes('contact') || fileName.includes('phone') || (code.includes('contacts') && code.includes('{'));
     const isCalculator = fileName.includes('calc') || code.includes('float(input') || (code.includes('op ==') && code.includes('/'));
-    const isEvenCounter = fileName.includes('even') || code.includes('% 2') || (code.includes('numbers') && code.includes('count'));
 
     const hasWhile = code.includes('while ') || code.includes('while(');
     const hasInt = code.includes('int(input') || code.includes('int(');
@@ -256,7 +261,148 @@ export class AIService {
     const concepts: string[] = [];
     const questions: DefenseQuestion[] = [];
 
-    if (isGuessGame) {
+    if (isGreeting) {
+      summary = '5 класс: Первые шаги в Python. Пользовательский ввод input() и вывод строки через print().';
+      concepts.push(
+        'Пользовательский ввод через input()',
+        'Сохранение значения в переменную name',
+        'Вывод текста и переменной через print("Привет,", name)',
+        'Строковый тип данных (str)'
+      );
+
+      questions.push({
+        id: `q_${Date.now()}_1`,
+        defenseSessionId: '',
+        questionText: 'Зачем в первой строке мы пишем name = input(...) и куда сохраняется то, что напечатает пользователь?',
+        skill: 'Переменные и ввод',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 1,
+        purpose: 'Проверяет базовое понимание ввода input() и сохранения в переменную name.',
+        mustMention: ['переменная', 'name', 'ввод', 'сохранить', 'память', 'пользователь', 'input'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_2`,
+        defenseSessionId: '',
+        questionText: 'Что делает команда print("Привет,", name) во второй строке программы?',
+        skill: 'Вывод на экран',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 2,
+        purpose: 'Проверяет знание функции print() и вывода приветствия вместе с переменной.',
+        mustMention: ['print', 'вывод', 'экран', 'напечатать', 'привет', 'имя'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_3`,
+        defenseSessionId: '',
+        questionText: 'Какой тип данных имеет переменная name после вызова input() — текст (строка) или число?',
+        skill: 'Типы данных',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 3,
+        purpose: 'Проверяет знание строкового типа str в Python.',
+        mustMention: ['строка', 'str', 'текст', 'string', 'тип'],
+        isRequired: true
+      });
+    } else if (isSum) {
+      summary = '6 класс: Сложение целых чисел. Преобразование типов через int(input()) и арифметика a + b.';
+      concepts.push(
+        'Ввод целых чисел через int(input())',
+        'Переменные a и b',
+        'Арифметическая операция сложения +',
+        'Вывод суммы на экран print()'
+      );
+
+      questions.push({
+        id: `q_${Date.now()}_1`,
+        defenseSessionId: '',
+        questionText: 'Зачем мы оборачиваем ввод чисел в int(input()), а не оставляем просто input()?',
+        skill: 'Преобразование типов',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 1,
+        purpose: 'Проверяет понимание преобразования строки в целое число int для сложения.',
+        mustMention: ['int', 'число', 'сложить', 'текст', 'строка', 'тип', 'целое'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_2`,
+        defenseSessionId: '',
+        questionText: 'Что произойдет в print(a + b), если убрать int() из программы и сложить две строки "5" и "3"?',
+        skill: 'Строки vs Числа',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 2,
+        purpose: 'Проверяет понимание конкатенации строк "53" в отличие от математического сложения 8.',
+        mustMention: ['строка', 'склеит', '53', 'текст', 'конкатенация', 'буквы'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_3`,
+        defenseSessionId: '',
+        questionText: 'Как программа сохраняет введенные пользователем два числа?',
+        skill: 'Переменные и память',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 3,
+        purpose: 'Проверяет знание сохранения данных в переменные a и b.',
+        mustMention: ['переменные', 'a', 'b', 'память', 'сохраняет', 'значение'],
+        isRequired: true
+      });
+    } else if (isSignCheck) {
+      summary = '7 класс: Проверка знака числа. Ветвление if/else, оператор сравнения x > 0.';
+      concepts.push(
+        'Ввод целого числа int(input())',
+        'Условный оператор if x > 0',
+        'Ветка else для неположительных чисел',
+        'Вывод результата проверки'
+      );
+
+      questions.push({
+        id: `q_${Date.now()}_1`,
+        defenseSessionId: '',
+        questionText: 'Какое условие проверяет строка if x > 0 и когда сработает команда print("Положительное")?',
+        skill: 'Ветвление if',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 1,
+        purpose: 'Проверяет понимание условия x > 0 для положительных чисел.',
+        mustMention: ['больше', 'ноль', 'положительное', 'x > 0', 'условие', 'если'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_2`,
+        defenseSessionId: '',
+        questionText: 'В каком случае программа перейдет в блок else и напечатает «Отрицательное или ноль»?',
+        skill: 'Ветвь else',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 2,
+        purpose: 'Проверяет понимание срабатывания ветки else, когда условие if ложно.',
+        mustMention: ['else', 'меньше', 'ноль', 'отрицательное', 'иначе', 'ложно', 'не выполняется'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_3`,
+        defenseSessionId: '',
+        questionText: 'Зачем перед сравнением x > 0 мы обязательно применили функцию int() к вводу?',
+        skill: 'Типы данных и сравнение',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 3,
+        purpose: 'Проверяет знание того, что строку нельзя сравнить с числом 0 оператором >.',
+        mustMention: ['int', 'число', 'сравнить', 'тип', 'ошибка', 'строка', '>'],
+        isRequired: true
+      });
+    } else if (isGuessGame) {
       summary = 'Школьная игра «Угадай число»: цикл while True, ввод целых чисел int(input()), ветвление if/elif/else и выход по break.';
       concepts.push(
         'Бесконечный цикл while True',
@@ -395,6 +541,100 @@ export class AIService {
         orderIndex: 3,
         purpose: 'Проверяет понимание накопления результата и увеличения счетчика на единицу.',
         mustMention: ['плюс', 'один', 'увеличить', 'прибавить', 'счетчик', '+ 1', 'растет'],
+        isRequired: true
+      });
+    } else if (isAreaFunc) {
+      summary = '10 класс: Пользовательские функции def. Сигнатура rectangle_area(w, h), параметры и оператор return.';
+      concepts.push(
+        'Объявление функции def rectangle_area(w, h)',
+        'Параметры ширины и высоты (w, h)',
+        'Возврат значения через return w * h',
+        'Вызов функции и вывод результата'
+      );
+
+      questions.push({
+        id: `q_${Date.now()}_1`,
+        defenseSessionId: '',
+        questionText: 'Что объявляет ключевое слово def в строке def rectangle_area(w, h) и какие параметры принимает функция?',
+        skill: 'Объявление функций',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 1,
+        purpose: 'Проверяет знание синтаксиса def и параметров функции.',
+        mustMention: ['def', 'функция', 'ширина', 'высота', 'параметры', 'w', 'h', 'аргументы'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_2`,
+        defenseSessionId: '',
+        questionText: 'Какую роль выполняет инструкция return w * h внутри тела функции?',
+        skill: 'Возврат значения',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 2,
+        purpose: 'Проверяет понимание оператора return для передачи вычисленного результата вызывающему коду.',
+        mustMention: ['return', 'возврат', 'умножить', 'результат', 'площадь', 'вернуть'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_3`,
+        defenseSessionId: '',
+        questionText: 'Чем отличается возвращаемое значение функции с return от простого print() внутри функции?',
+        skill: 'return vs print',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 3,
+        purpose: 'Проверяет фундаментальное понимание возврата данных в переменную vs вывода на экран.',
+        mustMention: ['return', 'print', 'вернуть', 'значение', 'сохранить', 'экран', 'результат'],
+        isRequired: true
+      });
+    } else if (isPhoneBook) {
+      summary = '11 класс: Структуры данных. Словари dict, пары ключ-значение и безопасный доступ.';
+      concepts.push(
+        'Структура данных словарь contacts = {...}',
+        'Пары «ключ : значение»',
+        'Проверка наличия ключа if name in contacts',
+        'Получение значения по ключу contacts[name]'
+      );
+
+      questions.push({
+        id: `q_${Date.now()}_1`,
+        defenseSessionId: '',
+        questionText: 'Какая структура данных используется в переменной contacts и как в ней хранятся данные?',
+        skill: 'Словари (dict)',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 1,
+        purpose: 'Проверяет знание словаря (dict) и формата ключ:значение.',
+        mustMention: ['словарь', 'dict', 'ключ', 'значение', 'имя', 'номер', 'пары'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_2`,
+        defenseSessionId: '',
+        questionText: 'Зачем в программе написана проверка if name in contacts перед выводом номера?',
+        skill: 'Безопасный доступ',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 2,
+        purpose: 'Проверяет понимание предотвращения KeyError при отсутствии ключа в словаре.',
+        mustMention: ['проверка', 'ключ', 'ошибка', 'существует', 'KeyError', 'нет', 'найти'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_3`,
+        defenseSessionId: '',
+        questionText: 'Как программа достает телефон нужного человека из словаря по выражению contacts[name]?',
+        skill: 'Доступ по ключу',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 3,
+        purpose: 'Проверяет понимание индексации словаря квадратными скобками по имени-ключу.',
+        mustMention: ['ключ', 'скобки', 'квадратные', 'получить', 'номер', 'доступ', 'contacts'],
         isRequired: true
       });
     } else {

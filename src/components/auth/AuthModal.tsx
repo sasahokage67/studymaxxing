@@ -18,6 +18,7 @@ export const AuthModal: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [grade, setGrade] = useState<number>(8);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -66,7 +67,8 @@ export const AuthModal: React.FC = () => {
       username: username.trim(),
       password: password.trim(),
       name: name.trim() || username.trim(),
-      role: 'student'
+      role: 'student',
+      grade
     });
     if (!res.success) {
       setError(res.error || t('auth_err_invalid'));
@@ -210,6 +212,30 @@ export const AuthModal: React.FC = () => {
                   <div className="text-[11px] text-zinc-500 leading-relaxed mt-0.5">
                     {t('auth_teacher_admin_notice')}
                   </div>
+                </div>
+              </div>
+
+              {/* Grade Selection (5-11) */}
+              <div>
+                <label className="block text-xs font-mono text-zinc-400 mb-1.5 flex items-center justify-between">
+                  <span>Класс обучения (выберите цифру):</span>
+                  <span className="text-emerald-400 font-semibold">{grade} класс</span>
+                </label>
+                <div className="grid grid-cols-7 gap-1.5">
+                  {[5, 6, 7, 8, 9, 10, 11].map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setGrade(g)}
+                      className={`py-2 text-center rounded-lg border text-xs font-mono font-bold transition-all cursor-pointer ${
+                        grade === g
+                          ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-sm'
+                          : 'border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
+                      }`}
+                    >
+                      {g}
+                    </button>
+                  ))}
                 </div>
               </div>
 

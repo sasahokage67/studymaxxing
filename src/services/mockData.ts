@@ -19,6 +19,7 @@ export const SEEDED_USERS: User[] = [
     name: 'Nuradil M.',
     email: 'nuradil@studymaxxing.kz',
     role: 'student',
+    grade: 8,
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
     school: 'РФМШ г. Алматы',
     schoolWebsite: 'https://almaty.fizmat.kz',
@@ -30,6 +31,7 @@ export const SEEDED_USERS: User[] = [
     name: 'Алия С.',
     email: 'aliya.student@school.kz',
     role: 'student',
+    grade: 7,
     avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80',
   },
   {
@@ -39,6 +41,7 @@ export const SEEDED_USERS: User[] = [
     name: 'Даниэль К.',
     email: 'daniel.student@school.kz',
     role: 'student',
+    grade: 6,
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
   },
   {
@@ -48,15 +51,89 @@ export const SEEDED_USERS: User[] = [
     name: 'Мадина А.',
     email: 'madina.student@school.kz',
     role: 'student',
+    grade: 9,
     avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80',
   },
 ];
 
 export const SEEDED_ASSIGNMENTS: Assignment[] = [
   {
+    id: 'asg_grade_5',
+    classId: 'cls_cs_5',
+    className: 'Информатика 5 «А» класс · Первые программы',
+    grade: 5,
+    title: 'Python: Знакомство и приветствие',
+    description: 'Написать простую программу, которая запрашивает имя пользователя через input() и выводит приветствие через print().',
+    submissionType: 'code',
+    questionCount: 3,
+    answerMode: 'voice_or_text',
+    timerSeconds: 15,
+    allowRetakes: false,
+    autoSubmit: true,
+    scoreVisibility: 'after_review',
+    referenceCode: `name = input("Как тебя зовут? ")
+print("Привет,", name)`,
+    starterTemplate: `# 5 класс: Приветствие пользователя
+# Запросите имя пользователя и выведите приветствие
+name = input("Как тебя зовут? ")
+`,
+    createdAt: '2026-09-20T10:00:00Z',
+  },
+  {
+    id: 'asg_grade_6',
+    classId: 'cls_cs_6',
+    className: 'Информатика 6 «А» класс · Числа и переменные',
+    grade: 6,
+    title: 'Python: Сложение двух чисел',
+    description: 'Запросить у пользователя два целых числа через int(input()) и вывести результат их сложения.',
+    submissionType: 'code',
+    questionCount: 3,
+    answerMode: 'voice_or_text',
+    timerSeconds: 15,
+    allowRetakes: false,
+    autoSubmit: true,
+    scoreVisibility: 'after_review',
+    referenceCode: `a = int(input("Введите первое число: "))
+b = int(input("Введите второе число: "))
+print("Сумма чисел:", a + b)`,
+    starterTemplate: `# 6 класс: Сложение двух чисел
+# Запросите два целых числа и выведите их сумму
+a = int(input("Введите первое число: "))
+b = int(input("Введите второе число: "))
+`,
+    createdAt: '2026-09-19T11:00:00Z',
+  },
+  {
+    id: 'asg_calc',
+    classId: 'cls_cs_7',
+    className: 'Информатика 7 «Б» класс · Ветвления if/else',
+    grade: 7,
+    title: 'Python: Проверка знака числа',
+    description: 'Запросить число x и проверить через if/else: если x > 0 — вывести «Положительное», иначе — «Отрицательное или ноль».',
+    submissionType: 'code',
+    questionCount: 3,
+    answerMode: 'voice_or_text',
+    timerSeconds: 15,
+    allowRetakes: false,
+    autoSubmit: true,
+    scoreVisibility: 'after_review',
+    referenceCode: `x = int(input("Введите число: "))
+
+if x > 0:
+    print("Положительное")
+else:
+    print("Отрицательное или ноль")`,
+    starterTemplate: `# 7 класс: Ветвление if/else
+# Запросите число x и проверьте, больше ли оно нуля
+x = int(input("Введите число: "))
+`,
+    createdAt: '2026-09-15T14:30:00Z',
+  },
+  {
     id: 'asg_game',
     classId: 'cls_cs_8',
     className: 'Информатика 8 «А» класс · Основы алгоритмов',
+    grade: 8,
     title: 'Python: Игра «Угадай число»',
     description: 'Написать программу с бесконечным циклом while True, вводом чисел int(input()), подсказками больше/меньше и выходом по break.',
     submissionType: 'code',
@@ -79,18 +156,28 @@ while True:
         print("Загаданное число больше!")
     else:
         print("Загаданное число меньше!")`,
-    starterTemplate: `# Задание 1: Игра «Угадай число»
-# Задайте число secret = 42, организуйте цикл while True с int(input()) и break
-secret = 42
-`,
+    starterTemplate: `secret = 42
+
+print("Компьютер загадал число от 1 до 100!")
+
+while True:
+    guess = int(input("Введите число: "))
+    if guess == secret:
+        print("Поздравляю, вы угадали!")
+        break
+    elif guess < secret:
+        print("Загаданное число больше!")
+    else:
+        print("Загаданное число меньше!")`,
     createdAt: '2026-09-18T10:00:00Z',
   },
   {
-    id: 'asg_calc',
-    classId: 'cls_cs_7',
-    className: 'Информатика 7 «Б» класс · Ветвления if/else',
-    title: 'Python: Простой калькулятор двух чисел',
-    description: 'Создать консольный калькулятор для 4 арифметических действий (+, -, *, /) с обязательной проверкой деления на ноль (b != 0).',
+    id: 'asg_grade_9',
+    classId: 'cls_cs_9',
+    className: 'Информатика 9 «А» класс · Списки и циклы',
+    grade: 9,
+    title: 'Python: Подсчет четных чисел',
+    description: 'Пройти циклом for по списку чисел numbers, проверить условие четности num % 2 == 0 и сосчитать общее количество.',
     submissionType: 'code',
     questionCount: 3,
     answerMode: 'voice_or_text',
@@ -98,30 +185,72 @@ secret = 42
     allowRetakes: false,
     autoSubmit: true,
     scoreVisibility: 'after_review',
-    referenceCode: `a = float(input("Введите первое число: "))
-op = input("Выберите операцию (+, -, *, /): ")
-b = float(input("Введите второе число: "))
+    referenceCode: `numbers = [12, 5, 8, 19, 24, 7, 30]
+count = 0
 
-if op == "+":
-    print("Результат:", a + b)
-elif op == "-":
-    print("Результат:", a - b)
-elif op == "*":
-    print("Результат:", a * b)
-elif op == "/":
-    if b != 0:
-        print("Результат:", a / b)
-    else:
-        print("Ошибка: делить на ноль нельзя!")
-else:
-    print("Неизвестная операция")`,
-    starterTemplate: `# Задание 2: Калькулятор двух чисел
-# Запросите числа a и b, операцию op и вычислите результат с проверкой деления на ноль (b != 0)
-a = float(input("Введите первое число: "))
-op = input("Выберите операцию (+, -, *, /): ")
-b = float(input("Введите второе число: "))
+for num in numbers:
+    if num % 2 == 0:
+        count = count + 1
+
+print("Количество четных чисел:", count)`,
+    starterTemplate: `# 9 класс: Подсчет четных чисел
+numbers = [12, 5, 8, 19, 24, 7, 30]
+count = 0
 `,
-    createdAt: '2026-09-15T14:30:00Z',
+    createdAt: '2026-09-17T09:00:00Z',
+  },
+  {
+    id: 'asg_grade_10',
+    classId: 'cls_cs_10',
+    className: 'Информатика 10 «А» класс · Функции def',
+    grade: 10,
+    title: 'Python: Функция площади прямоугольника',
+    description: 'Создать функцию def rectangle_area(w, h), которая возвращает ширину умноженную на высоту.',
+    submissionType: 'code',
+    questionCount: 3,
+    answerMode: 'voice_or_text',
+    timerSeconds: 15,
+    allowRetakes: false,
+    autoSubmit: true,
+    scoreVisibility: 'after_review',
+    referenceCode: `def rectangle_area(w, h):
+    return w * h
+
+w = float(input("Ширина: "))
+h = float(input("Высота: "))
+print("Площадь:", rectangle_area(w, h))`,
+    starterTemplate: `# 10 класс: Функция площади прямоугольника
+def rectangle_area(w, h):
+    return w * h
+`,
+    createdAt: '2026-09-16T12:00:00Z',
+  },
+  {
+    id: 'asg_grade_11',
+    classId: 'cls_cs_11',
+    className: 'Информатика 11 «А» класс · Структуры данных',
+    grade: 11,
+    title: 'Python: Телефонный справочник (словари)',
+    description: 'Создать словарь contacts с именами и номерами, запросить имя через input() и вывести телефон контакта.',
+    submissionType: 'code',
+    questionCount: 3,
+    answerMode: 'voice_or_text',
+    timerSeconds: 15,
+    allowRetakes: false,
+    autoSubmit: true,
+    scoreVisibility: 'after_review',
+    referenceCode: `contacts = {"Алихан": "+77011112233", "Динара": "+77025556677"}
+name = input("Введите имя: ")
+
+if name in contacts:
+    print("Номер телефона:", contacts[name])
+else:
+    print("Контакт не найден")`,
+    starterTemplate: `# 11 класс: Телефонный справочник (словари)
+contacts = {"Алихан": "+77011112233", "Динара": "+77025556677"}
+name = input("Введите имя: ")
+`,
+    createdAt: '2026-09-14T15:00:00Z',
   }
 ];
 
