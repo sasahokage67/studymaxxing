@@ -623,8 +623,9 @@ export class AIService {
    */
   static getAIEngineConfig(): { mode: 'local' | 'gemini'; apiKey: string } {
     try {
-      const mode = (localStorage.getItem('learnproof_ai_mode') as 'local' | 'gemini') || 'local';
-      const apiKey = localStorage.getItem('learnproof_gemini_api_key') || '';
+      const envKey = ((import.meta as any).env?.VITE_GEMINI_API_KEY as string) || '';
+      const mode = (localStorage.getItem('learnproof_ai_mode') as 'local' | 'gemini') || (envKey ? 'gemini' : 'local');
+      const apiKey = localStorage.getItem('learnproof_gemini_api_key') || envKey;
       return { mode, apiKey };
     } catch (e) {
       return { mode: 'local', apiKey: '' };
