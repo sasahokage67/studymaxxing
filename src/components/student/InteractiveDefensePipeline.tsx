@@ -21,10 +21,7 @@ import {
   ShieldCheck,
   HelpCircle,
   Volume2,
-  Bot,
-  Settings,
-  Key,
-  X
+  Bot
 } from 'lucide-react';
 import { AIService, DefenseSessionVerdict, EvaluatedQuestionResult } from '../../services/aiService';
 import { SpeechService } from '../../services/speechService';
@@ -141,28 +138,6 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
   const [evaluatedResults, setEvaluatedResults] = useState<EvaluatedQuestionResult[]>([]);
   const [finalVerdict, setFinalVerdict] = useState<DefenseSessionVerdict | null>(null);
 
-  // AI Engine configuration state
-  const [aiEngineConfig, setAiEngineConfig] = useState(AIService.getAIEngineConfig());
-  const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
-  const [geminiKeyInput, setGeminiKeyInput] = useState(aiEngineConfig.apiKey);
-  const [geminiModeInput, setGeminiModeInput] = useState<'local' | 'gemini'>(aiEngineConfig.mode);
-  const [saveSuccessMsg, setSaveSuccessMsg] = useState('');
-
-  const handleSaveAiSettings = () => {
-    AIService.setAIEngineConfig({
-      mode: geminiModeInput,
-      apiKey: geminiKeyInput.trim()
-    });
-    setAiEngineConfig({
-      mode: geminiModeInput,
-      apiKey: geminiKeyInput.trim()
-    });
-    setSaveSuccessMsg('Настройки ИИ успешно сохранены');
-    setTimeout(() => {
-      setSaveSuccessMsg('');
-      setIsAiSettingsOpen(false);
-    }, 900);
-  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -325,7 +300,7 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
       setDetectedCodeTokens([]);
     } else {
       // All 3 questions answered -> Compute Final Automated Verdict
-      const verdict = AIService.calculateSessionVerdict(updatedResults);
+      const verdict = AIService.calculateSessionVerdict(updatedResults, currentAnalysis?.codeComparison);
       setFinalVerdict(verdict);
       setStage('verdict_report');
 
@@ -368,22 +343,13 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
           </div>
         </div>
 
-        {/* AI Model Badge & Pipeline Stage Indicators */}
+        {/* AI Examiner Static Indicator & Pipeline Stage Indicators */}
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setIsAiSettingsOpen(true)}
-            className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 hover:border-emerald-500/50 text-xs flex items-center gap-1.5 text-zinc-300 transition-all cursor-pointer shadow-sm"
-            title="Настроить модель ИИ (локальная или Gemini Cloud)"
-          >
+          <div className="px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs flex items-center gap-2 text-zinc-300 shadow-sm font-mono">
             <Bot className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline text-zinc-500 text-[10px] uppercase">ИИ:</span>
-            <span className="text-emerald-400 font-bold text-[11px]">
-              {aiEngineConfig.mode === 'gemini' ? 'Gemini 1.5 Flash' : 'Нейро-Экзаменатор v2.4'}
-            </span>
-            <span className="text-[9px] text-zinc-500 border border-zinc-700 px-1 rounded font-mono">0% строгий</span>
-            <Settings className="w-3 h-3 text-zinc-500" />
-          </button>
+            <span className="text-zinc-200 font-semibold text-[11px]">ИИ-Экзаменатор</span>
+            <span className="text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded font-bold">АКТИВЕН</span>
+          </div>
 
           {/* Pipeline Stage Indicators */}
           <div className="hidden lg:flex items-center gap-2 text-xs">
@@ -973,7 +939,22 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
                     Сверка с эталоном учителя (Benchmark AI Check)
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {currentAnalysis.codeComparison.codeHealth === 'broken' && (
+                    <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse">
+                      КОД НЕРАБОЧИЙ
+                    </span>
+                  )}
+                  {currentAnalysis.codeComparison.codeHealth === 'empty' && (
+                    <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-red-500/20 text-red-400 border border-red-500/40">
+                      ФАЙЛ ПУСТ
+                    </span>
+                  )}
+                  {currentAnalysis.codeComparison.codeHealth === 'working_minor_slip' && (
+                    <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                      МЕЛКАЯ ОПЕЧАТКА (ЗАЧТЕНО)
+                    </span>
+                  )}
                   <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
                     currentAnalysis.codeComparison.plagiarismRisk === 'low'
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
@@ -996,6 +977,16 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
                   </span>
                 </div>
               </div>
+
+              {currentAnalysis.codeComparison.brokenReason && (
+                <div className="p-2.5 rounded-lg bg-red-950/30 border border-red-500/30 text-xs text-red-300 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold block text-red-200">Код нерабочий / не завершен:</span>
+                    <span className="text-[11px] text-zinc-300 font-mono">{currentAnalysis.codeComparison.brokenReason}</span>
+                  </div>
+                </div>
+              )}
 
               <p className="text-zinc-300 font-sans text-xs leading-relaxed">
                 {currentAnalysis.codeComparison.verdict}
@@ -1125,167 +1116,7 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
         </div>
       )}
 
-      {/* ================= AI ENGINE CONFIG MODAL ================= */}
-      {isAiSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-lg bg-zinc-950 border border-zinc-800 rounded-2xl p-6 shadow-2xl space-y-5 text-zinc-100 font-sans">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  <Bot className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-100">
-                    Настройки обученного ИИ-Экзаменатора
-                  </h3>
-                  <p className="text-[11px] text-zinc-500 font-mono">
-                    CALIBRATION ENGINE // STRICT 0% ZERO-TOLERANCE
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsAiSettingsOpen(false)}
-                className="p-1 rounded-lg hover:bg-zinc-900 text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Model Engine Selector */}
-            <div className="space-y-3">
-              <label className="block text-xs font-semibold text-zinc-300 uppercase tracking-wider font-mono">
-                Выберите активную ИИ-модель:
-              </label>
-
-              <div className="space-y-2 font-mono">
-                {/* Local Neural Engine v2.4 */}
-                <div
-                  onClick={() => setGeminiModeInput('local')}
-                  className={`p-3.5 rounded-xl border text-xs cursor-pointer transition-all ${
-                    geminiModeInput === 'local'
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-                      : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-zinc-100 flex items-center gap-2">
-                      <Cpu className="w-4 h-4 text-emerald-400" />
-                      Нейро-Экзаменатор v2.4 (Локальный)
-                    </span>
-                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
-                      Рекомендуется
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
-                    Строгая калибровка: 0% при признании в незнании («не знаю», «не помню», «списал»). Мгновенный анализ без задержек и внешних ключей.
-                  </p>
-                </div>
-
-                {/* Google Gemini 1.5 Flash Cloud LLM */}
-                <div
-                  onClick={() => setGeminiModeInput('gemini')}
-                  className={`p-3.5 rounded-xl border text-xs cursor-pointer transition-all ${
-                    geminiModeInput === 'gemini'
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-                      : 'border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:border-zinc-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-zinc-100 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-purple-400" />
-                      Google Gemini 1.5 Flash (Облачная LLM)
-                    </span>
-                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
-                      Deep Reasoning
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">
-                    Прямой запрос к большой языковой модели Google с глубоким семантическим контекстом и строгим промптом экзаменатора.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Gemini API Key input if Gemini mode is chosen */}
-            {geminiModeInput === 'gemini' && (
-              <div className="space-y-2 p-3.5 bg-zinc-900/60 border border-zinc-800 rounded-xl animate-in fade-in duration-150 font-mono">
-                <label className="block text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-                  <Key className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Google Gemini API Key:</span>
-                </label>
-                <input
-                  type="password"
-                  value={geminiKeyInput}
-                  onChange={(e) => setGeminiKeyInput(e.target.value)}
-                  placeholder="AIzaSy..."
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-emerald-500 font-mono"
-                />
-                <p className="text-[10px] text-zinc-500 font-sans">
-                  Ключ сохраняется локально в вашем браузере. Бесплатный ключ можно получить в <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-emerald-400 underline">Google AI Studio</a>.
-                </p>
-              </div>
-            )}
-
-            {/* Strict Grading Rules Summary */}
-            <div className="p-3.5 bg-zinc-900/40 border border-zinc-800 rounded-xl space-y-1.5 text-xs text-zinc-400 font-sans">
-              <span className="font-semibold text-zinc-200 block text-[11px] uppercase font-mono">
-                Шкала калибровки оценивания:
-              </span>
-              <ul className="space-y-1 text-[11px] leading-relaxed">
-                <li className="flex items-center gap-1.5 text-red-400">
-                  <span>🛑</span>
-                  <span><strong>«Не знаю / не помню / списал / хз»:</strong> строго 0%</span>
-                </li>
-                <li className="flex items-center gap-1.5 text-amber-400">
-                  <span>⚠️</span>
-                  <span><strong>Оффтоп / случайные слова:</strong> 1–5%</span>
-                </li>
-                <li className="flex items-center gap-1.5 text-zinc-300">
-                  <span>⚠️</span>
-                  <span><strong>Поверхностный ответ / догадка:</strong> 20–35%</span>
-                </li>
-                <li className="flex items-center gap-1.5 text-blue-300">
-                  <span>📋</span>
-                  <span><strong>Частичное понимание:</strong> 50–65% (Проверка учителя)</span>
-                </li>
-                <li className="flex items-center gap-1.5 text-emerald-400">
-                  <span>✅</span>
-                  <span><strong>Аргументированное понимание кода:</strong> 85–98% (Автозачет)</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Success message */}
-            {saveSuccessMsg && (
-              <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono text-center flex items-center justify-center gap-2">
-                <Check className="w-4 h-4" />
-                <span>{saveSuccessMsg}</span>
-              </div>
-            )}
-
-            {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-zinc-800">
-              <button
-                type="button"
-                onClick={() => setIsAiSettingsOpen(false)}
-                className="px-4 py-2 rounded-lg border border-zinc-800 hover:bg-zinc-900 text-xs text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
-              >
-                Отмена
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveAiSettings}
-                className="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs transition-colors cursor-pointer"
-              >
-                Применить и сохранить
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
+

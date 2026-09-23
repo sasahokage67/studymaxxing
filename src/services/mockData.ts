@@ -20,11 +20,11 @@ export const SEEDED_USERS: User[] = [
     email: 'arman.student@school.kz',
     role: 'student',
     grade: 8,
-    classId: 'cls_cs_8',
-    className: '8 «А» класс',
+    classId: undefined,
+    className: undefined,
     avatarUrl: 'https://api.dicebear.com/7.x/identicon/svg?seed=arman',
-    school: 'РФМШ г. Алматы',
-    schoolWebsite: 'https://almaty.fizmat.kz',
+    school: undefined,
+    schoolWebsite: undefined,
   }
 ];
 
@@ -36,7 +36,7 @@ export const SEEDED_CLASSES: SchoolClass[] = [
     name: '8 «А» класс',
     subject: 'Информатика и основы Python',
     academicYear: '2026–2027',
-    studentIds: ['user_student_arman'],
+    studentIds: [],
     createdAt: '2026-09-01T08:00:00Z',
   },
   {

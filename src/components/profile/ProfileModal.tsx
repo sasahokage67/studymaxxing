@@ -397,7 +397,11 @@ export const ProfileModal: React.FC = () => {
             }`}
           >
             <Building2 className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Школа ({currentUser.school ? 'Указана' : 'Выбрать'})</span>
+            <span>
+              {currentRole === 'teacher'
+                ? `Школа (${currentUser.school ? 'Указана' : 'Выбрать'})`
+                : 'Школа и класс'}
+            </span>
           </button>
 
           <button
@@ -428,8 +432,13 @@ export const ProfileModal: React.FC = () => {
                       Учебное заведение
                     </div>
                     <div className="text-sm font-bold text-zinc-100 mt-0.5">
-                      {currentUser.school || 'Школа не выбрана'}
+                      {currentUser.school || (currentRole === 'student' ? 'Пока не прикреплен к школе' : 'Школа не выбрана')}
                     </div>
+                    {currentRole === 'student' && !currentUser.school && (
+                      <p className="text-[11px] text-zinc-500 font-sans mt-0.5">
+                        Школа назначается преподавателем при зачислении в класс.
+                      </p>
+                    )}
                     {currentUser.schoolWebsite && (
                       <a
                         href={currentUser.schoolWebsite}
@@ -445,16 +454,18 @@ export const ProfileModal: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('school')}
-                  className="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs transition-colors shrink-0 cursor-pointer"
-                >
-                  {currentUser.school ? 'Сменить школу' : 'Выбрать школу'}
-                </button>
+                {currentRole === 'teacher' && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('school')}
+                    className="px-3 py-1.5 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs transition-colors shrink-0 cursor-pointer"
+                  >
+                    {currentUser.school ? 'Сменить школу' : 'Выбрать школу'}
+                  </button>
+                )}
               </div>
 
-              {/* Role Specific Academic Stats (Defense Score removed as requested) */}
+              {/* Role Specific Academic Stats */}
               <div>
                 <h4 className="text-xs font-mono font-semibold text-zinc-400 uppercase tracking-wider mb-3">
                   {currentRole === 'teacher' ? 'Метрики классов и защит' : 'Текущий академический статус'}
@@ -484,49 +495,62 @@ export const ProfileModal: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 font-mono">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono">
                     <div className="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-lg flex flex-col justify-between">
                       <div>
                         <div className="text-[11px] text-zinc-500 uppercase flex items-center justify-between">
                           <span>Класс</span>
-                          <span className="text-emerald-400 font-bold">{currentUser.grade || 8} класс</span>
+                          {currentUser.classId && currentUser.className ? (
+                            <span className="text-emerald-400 font-bold">{currentUser.grade || 8} класс</span>
+                          ) : (
+                            <span className="text-amber-400 font-bold text-[10px] bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+                              Не зачислен
+                            </span>
+                          )}
                         </div>
-                        <div className="text-base font-bold text-zinc-100 mt-1 truncate">
-                          {currentUser.grade || 8} «А» класс
+                        <div className="text-base font-bold text-zinc-100 mt-1.5 truncate">
+                          {currentUser.classId && currentUser.className ? (
+                            currentUser.className
+                          ) : (
+                            <span className="text-amber-400 font-mono text-sm">(пока не зачислен)</span>
+                          )}
                         </div>
                       </div>
-                      <div className="mt-2 pt-2 border-t border-zinc-800/80">
-                        <div className="text-[9px] text-zinc-500 uppercase mb-1">Сменить класс:</div>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {[5, 6, 7, 8, 9, 10, 11].map((g) => (
-                            <button
-                              key={g}
-                              type="button"
-                              onClick={() => updateUserGrade(g)}
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-all cursor-pointer ${
-                                (currentUser.grade || 8) === g
-                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50'
-                                  : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 border border-zinc-700/50'
-                              }`}
-                            >
-                              {g}
-                            </button>
-                          ))}
-                        </div>
+                      <div className="mt-3 pt-2.5 border-t border-zinc-800/80">
+                        {currentUser.classId && currentUser.className ? (
+                          <div className="text-[11px] text-emerald-400 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                            <span>Зачислен преподавателем</span>
+                          </div>
+                        ) : (
+                          <div className="text-[11px] text-zinc-400 font-sans leading-tight">
+                            Статус изменится, когда учитель добавит вас в класс.
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-lg">
-                      <div className="text-[11px] text-zinc-500 uppercase">Сдано работ</div>
-                      <div className="text-lg font-bold text-zinc-100 mt-1">1 проект</div>
-                      <div className="text-[10px] text-zinc-500 mt-0.5">quiz_bot.py</div>
-                    </div>
-                    <div className="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-lg">
-                      <div className="text-[11px] text-zinc-500 uppercase">Статус защиты</div>
-                      <div className="text-xs font-bold text-emerald-400 mt-2 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                        <span className="truncate">Защита принята</span>
+                    <div className="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-lg flex flex-col justify-between">
+                      <div>
+                        <div className="text-[11px] text-zinc-500 uppercase">Сдано работ</div>
+                        <div className="text-lg font-bold text-zinc-100 mt-1">1 проект</div>
+                        <div className="text-[10px] text-zinc-500 mt-0.5">quiz_bot.py</div>
                       </div>
-                      <div className="text-[10px] text-zinc-500 mt-0.5">Оценка выставлена</div>
+                      <div className="mt-3 pt-2.5 border-t border-zinc-800/80 text-[11px] text-zinc-500">
+                        Активный статус
+                      </div>
+                    </div>
+                    <div className="bg-zinc-900/80 border border-zinc-800 p-3.5 rounded-lg flex flex-col justify-between">
+                      <div>
+                        <div className="text-[11px] text-zinc-500 uppercase">Статус защиты</div>
+                        <div className="text-xs font-bold text-emerald-400 mt-2 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">Защита принята</span>
+                        </div>
+                        <div className="text-[10px] text-zinc-500 mt-0.5">Оценка выставлена</div>
+                      </div>
+                      <div className="mt-3 pt-2.5 border-t border-zinc-800/80 text-[11px] text-emerald-400">
+                        Зачет получен
+                      </div>
                     </div>
                   </div>
                 )}
@@ -598,8 +622,64 @@ export const ProfileModal: React.FC = () => {
             </>
           )}
 
-          {/* School Selection Tab */}
-          {activeTab === 'school' && (
+          {/* School & Class Tab for Student */}
+          {activeTab === 'school' && currentRole === 'student' && (
+            <div className="space-y-4 font-mono">
+              <div className="p-5 rounded-xl border border-zinc-800 bg-zinc-900/60 space-y-4">
+                <div className="flex items-center gap-2.5 text-amber-400">
+                  <Shield className="w-5 h-5" />
+                  <h4 className="text-sm font-bold text-zinc-100">
+                    Управление школой закреплено за преподавателем
+                  </h4>
+                </div>
+
+                <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+                  Ученики не могут самостоятельно выбирать или изменять школу и класс. 
+                  Прикрепление к учебному заведению и зачисление в класс выполняется исключительно преподавателем через учительскую панель.
+                </p>
+
+                <div className="pt-3 border-t border-zinc-800/80 space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-500 uppercase">Учебное заведение:</span>
+                    <span className="font-bold text-zinc-200">
+                      {currentUser.school || (
+                        <span className="text-amber-400 font-normal">(пока не прикреплен к школе)</span>
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-500 uppercase">Класс обучения:</span>
+                    <span>
+                      {currentUser.classId && currentUser.className ? (
+                        <span className="font-bold text-emerald-400">{currentUser.className}</span>
+                      ) : (
+                        <span className="text-amber-400 font-bold">(пока не зачислен)</span>
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-500 uppercase">Статус зачисления:</span>
+                    <span>
+                      {currentUser.classId ? (
+                        <span className="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold">
+                          Зачислен в класс
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-semibold">
+                          Ожидает добавления учителем
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* School Selection Tab for Teacher */}
+          {activeTab === 'school' && currentRole === 'teacher' && (
             <div className="space-y-4 font-mono">
               {schoolSuccessMsg && (
                 <div className="p-3 rounded-lg text-xs flex items-center gap-2 border bg-emerald-950/40 border-emerald-800/60 text-emerald-300">

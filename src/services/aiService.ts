@@ -144,11 +144,43 @@ export class AIService {
         desc: 'Многовариантное ветвление if / elif / else'
       },
       {
+        id: 'func_def',
+        test: (c: string) => c.includes('def '),
+        desc: 'Объявление функции def'
+      },
+      {
+        id: 'func_return',
+        test: (c: string) => c.includes('return ') || c.includes('return\n') || c.includes('return;'),
+        desc: 'Возврат значения из функции return'
+      },
+      {
+        id: 'dict_store',
+        test: (c: string) => (c.includes('{') && c.includes('}')) || c.includes('dict('),
+        desc: 'Словарь dict для хранения пар ключ-значение'
+      },
+      {
         id: 'print_output',
         test: (c: string) => c.includes('print('),
         desc: 'Вывод результата через print()'
       }
     ];
+
+    // Check empty or whitespace code
+    const cleanStudentCode = sCode.replace(/#.*$/gm, '').trim();
+    if (cleanStudentCode.length === 0) {
+      return {
+        correctnessScore: 0,
+        similarityScore: 0,
+        plagiarismRisk: 'low',
+        verdict: 'Код нерабочий: решение не написано. Файл не содержит программного кода задания.',
+        matchingElements: [],
+        missingElements: ['Код программы отсутствует (файл решения пуст)'],
+        aiAnomalies: [],
+        isCodeWorking: false,
+        codeHealth: 'empty',
+        brokenReason: 'Файл решения пуст'
+      };
+    }
 
     let requiredCount = 0;
     let satisfiedCount = 0;
@@ -186,10 +218,36 @@ export class AIService {
     }
     const tokenSimilarity = rTokens.size > 0 ? Math.round((commonTokens / rTokens.size) * 100) : 70;
 
-    let correctness = Math.round((satisfiedCount / requiredCount) * 100);
-    // Penalty for critical missing safeguards
-    if (missing.some((m) => m.includes('ноль'))) {
-      correctness = Math.max(30, correctness - 25);
+    // Detect minor slips (unclosed bracket or forgotten colon) - forgiving: "на это пофиг"
+    const openParens = (sCode.match(/\(/g) || []).length;
+    const closeParens = (sCode.match(/\)/g) || []).length;
+    const hasParenSlip = openParens !== closeParens;
+    const hasColonSlip = /(if|elif|else|while|for|def)\s+[^:\n]+$/m.test(sCode);
+    const hasMinorSlip = hasParenSlip || hasColonSlip;
+
+    const isVeryShort = cleanStudentCode.length < 15;
+    const completenessRatio = satisfiedCount / requiredCount;
+
+    let correctness = Math.round(completenessRatio * 100);
+    let isCodeWorking = true;
+    let codeHealth: 'working' | 'working_minor_slip' | 'broken' | 'empty' = 'working';
+    let brokenReason: string | undefined = undefined;
+
+    // Code is completely broken if 0 required features satisfied or very short nonsensical text
+    if (satisfiedCount === 0 || (isVeryShort && satisfiedCount <= 1)) {
+      isCodeWorking = false;
+      codeHealth = 'broken';
+      correctness = Math.max(0, Math.min(10, Math.round(tokenSimilarity * 0.1)));
+      brokenReason = 'Алгоритм не реализован, ни одна из ключевых конструкций задания не написана';
+    } else if (completenessRatio < 0.6) {
+      isCodeWorking = false;
+      codeHealth = 'broken';
+      correctness = Math.round(completenessRatio * 40); // Strongly reduced proportional score
+      brokenReason = `Код не доделан: отсутствуют ${missing.join(', ')}`;
+    } else if (hasMinorSlip) {
+      isCodeWorking = true;
+      codeHealth = 'working_minor_slip';
+      correctness = Math.max(88, correctness); // Minor syntax slips are forgiven!
     }
 
     let plagiarismRisk: CodeComparisonResult['plagiarismRisk'] = 'low';
@@ -202,7 +260,11 @@ export class AIService {
     }
 
     let verdict = '';
-    if (correctness >= 85 && aiAnomalies.length === 0) {
+    if (!isCodeWorking) {
+      verdict = `Код нерабочий. Алгоритм решения не реализован или не доделан (${correctness}% готовности). Не реализованы: ${missing.join(', ')}. Оценка снижена пропорционально невыполненной части.`;
+    } else if (codeHealth === 'working_minor_slip') {
+      verdict = `Код рабочий на ${correctness}%. Алгоритм и структуры применены верно. Незначительные синтаксические опечатки (скобки или двоеточия) учтены без снижения оценки.`;
+    } else if (correctness >= 85 && aiAnomalies.length === 0) {
       verdict = `Код на ${correctness}% соответствует эталону учителя. Алгоритм, ветвления и обработка данных написаны в точном соответствии с заданием.`;
     } else if (aiAnomalies.length > 0) {
       verdict = `Обнаружены признаки использования ChatGPT/нейросетей (${aiAnomalies.length} аномалии). Решение переусложнено и отклоняется от эталона учителя.`;
@@ -219,7 +281,10 @@ export class AIService {
       verdict,
       matchingElements: matching,
       missingElements: missing,
-      aiAnomalies
+      aiAnomalies,
+      isCodeWorking,
+      codeHealth,
+      brokenReason
     };
   }
 
@@ -262,7 +327,92 @@ export class AIService {
     const concepts: string[] = [];
     const questions: DefenseQuestion[] = [];
 
-    if (isGreeting) {
+    if (codeComparison.codeHealth === 'empty') {
+      summary = 'Файл решения пуст. Программный код не написан.';
+      concepts.push('Код не написан', 'Отсутствует реализация задания');
+
+      questions.push({
+        id: `q_${Date.now()}_1`,
+        defenseSessionId: '',
+        questionText: 'В отправленном файле нет кода программы. Объясните, почему задание не было выполнено и какой именно алгоритм требовалось написать?',
+        skill: 'Анализ выполнения',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 1,
+        purpose: 'Фиксирует причину невыполнения задания и понимание постановки задачи.',
+        mustMention: ['не успел', 'не понял', 'задание', 'алгоритм', 'написать', 'код', 'забыл'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_2`,
+        defenseSessionId: '',
+        questionText: 'Какие команды Python и переменные необходимы для решения этого задания по вашей задумке?',
+        skill: 'Теоретические концепции',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 2,
+        purpose: 'Проверяет знание конструкций Python, необходимых для выполнения задачи.',
+        mustMention: ['переменные', 'ввод', 'вывод', 'цикл', 'условие', 'функция', 'input', 'print'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_3`,
+        defenseSessionId: '',
+        questionText: 'С какой первой строки должна начинаться программа решения данного задания?',
+        skill: 'Синтаксис запуска',
+        difficulty: 'easy',
+        timeLimit: 15,
+        orderIndex: 3,
+        purpose: 'Проверяет способность сделать первый шаг в написании кода.',
+        mustMention: ['input', 'def', 'print', 'переменная', 'первая строка'],
+        isRequired: true
+      });
+    } else if (codeComparison.codeHealth === 'broken') {
+      const missingList = codeComparison.missingElements.slice(0, 2).join(' и ') || 'ключевые части алгоритма';
+      summary = `Код нерабочий. Алгоритм не реализован (${codeComparison.correctnessScore}% готовности). Отсутствуют: ${codeComparison.missingElements.join(', ')}.`;
+      concepts.push('Код нерабочий', ...codeComparison.missingElements);
+
+      questions.push({
+        id: `q_${Date.now()}_1`,
+        defenseSessionId: '',
+        questionText: `Ваш код нерабочий и не решает задачу (не реализованы ${missingList}). На сколько процентов выполнено задание по вашей оценке и какую часть алгоритма вы не успели написать?`,
+        skill: 'Самооценка готовности кода',
+        difficulty: 'medium',
+        timeLimit: 15,
+        orderIndex: 1,
+        purpose: 'Проверяет осознание неполноты кода и способность оценить объем невыполненной работы.',
+        mustMention: ['процент', 'не успел', 'не доделал', 'алгоритм', 'ошибка', 'часть'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_2`,
+        defenseSessionId: '',
+        questionText: 'Каких конкретно команд или условий не хватает в вашем текущем коде, чтобы программа выполняла условие учителя?',
+        skill: 'Архитектура алгоритма',
+        difficulty: 'medium',
+        timeLimit: 15,
+        orderIndex: 2,
+        purpose: 'Проверяет знание недостающих звеньев программы.',
+        mustMention: ['цикл', 'условие', 'ветвление', 'ввод', 'функция', 'return', 'if', 'while', 'for'],
+        isRequired: true
+      });
+
+      questions.push({
+        id: `q_${Date.now()}_3`,
+        defenseSessionId: '',
+        questionText: 'Что произойдет, если попытаться запустить этот код прямо сейчас, и какие строки нужно исправить в первую очередь?',
+        skill: 'Трассировка ошибок',
+        difficulty: 'medium',
+        timeLimit: 15,
+        orderIndex: 3,
+        purpose: 'Проверяет понимание работоспособности текущего фрагмента кода.',
+        mustMention: ['ошибка', 'запуск', 'не сработает', 'исправить', 'строка', 'выведет', 'работает'],
+        isRequired: true
+      });
+    } else if (isGreeting) {
       summary = '5 класс: Первые шаги в Python. Пользовательский ввод input() и вывод строки через print().';
       concepts.push(
         'Пользовательский ввод через input()',
@@ -853,6 +1003,8 @@ export class AIService {
         'Отсутствие валидации исключений на входе (try/except)'
       ],
       codeComparison,
+      isCodeWorking: codeComparison.isCodeWorking,
+      codeHealth: codeComparison.codeHealth,
       generatedAt: new Date().toISOString()
     };
 
@@ -1158,7 +1310,10 @@ export class AIService {
    * <= 65%: Teacher Review Required (Knowledge gap detected)
    * <= 15%: Direct Failure / Zero tolerance (0-15%)
    */
-  static calculateSessionVerdict(results: EvaluatedQuestionResult[]): DefenseSessionVerdict {
+  static calculateSessionVerdict(
+    results: EvaluatedQuestionResult[],
+    codeComparison?: CodeComparisonResult
+  ): DefenseSessionVerdict {
     if (results.length === 0) {
       return {
         overallScore: 0,
@@ -1175,8 +1330,45 @@ export class AIService {
       };
     }
 
+    // 1. If code was empty / nothing written:
+    if (codeComparison?.codeHealth === 'empty') {
+      return {
+        overallScore: 0,
+        status: 'needs_followup',
+        isAutoApproved: false,
+        needsTeacherReview: true,
+        title: 'Код нерабочий: 0% (Файл пуст)',
+        badgeText: 'КОД НЕ НАПИСАН (0%)',
+        verdictDescription: 'Код нерабочий: в отправленном файле отсутствует программный код. Задание не выполнено (0%).',
+        conceptScore: 0,
+        reasoningScore: 0,
+        applicationScore: 0,
+        feedbackSummary: 'Код программы не написан. Решение не сдано.'
+      };
+    }
+
     const total = results.reduce((acc, r) => acc + r.evaluation.overallScore, 0);
-    const overallScore = Math.round(total / results.length);
+    let overallScore = Math.round(total / results.length);
+
+    // 2. If code was completely broken:
+    if (codeComparison && codeComparison.codeHealth === 'broken') {
+      // Reduce score directly in proportion to how much is missing / incomplete
+      const completenessFactor = Math.max(0.05, Math.min(0.25, (codeComparison.correctnessScore || 10) / 100));
+      const reducedScore = Math.min(15, Math.round(overallScore * completenessFactor));
+      return {
+        overallScore: reducedScore,
+        status: 'needs_followup',
+        isAutoApproved: false,
+        needsTeacherReview: true,
+        title: `Код нерабочий: ${reducedScore}%`,
+        badgeText: 'КОД НЕРАБОЧИЙ',
+        verdictDescription: `Код признан нерабочим: требуемый алгоритм задания не реализован (${codeComparison.correctnessScore || 10}% готовности). Итоговая оценка снижена пропорционально невыполненной части работы. Требуется исправить код и очно защитить решение учителю.`,
+        conceptScore: Math.round(reducedScore * 0.2),
+        reasoningScore: Math.round(reducedScore * 0.2),
+        applicationScore: Math.round(reducedScore * 0.2),
+        feedbackSummary: 'Код нерабочий. Алгоритм программы не реализован.'
+      };
+    }
 
     const avgConcept = Math.round((results.reduce((acc, r) => acc + r.evaluation.conceptScore, 0) / results.length) * 20);
     const avgReasoning = Math.round((results.reduce((acc, r) => acc + r.evaluation.reasoningScore, 0) / results.length) * 20);

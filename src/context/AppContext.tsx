@@ -446,6 +446,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: cleanName,
       role: data.role,
       grade: data.role === 'student' ? (data.grade || 8) : undefined,
+      classId: undefined,
+      className: undefined,
+      school: data.role === 'teacher' ? 'НИШ ФМН г. Астана' : undefined,
+      schoolWebsite: data.role === 'teacher' ? 'https://ast.nis.edu.kz' : undefined,
       email: `${cleanUser.toLowerCase().replace(/[^a-z0-9_.-]/g, '_')}@school.kz`,
       avatarUrl: getNeutralAvatarUrl(
         cleanUser,
@@ -514,6 +518,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateUserSchool = (school: string, schoolWebsite?: string) => {
+    if (currentUser.role === 'student') return; // Students cannot change school
     const updatedUser = { ...currentUser, school, schoolWebsite };
     setCurrentUser(updatedUser);
     localStorage.setItem('lp_current_user', JSON.stringify(updatedUser));
@@ -524,6 +529,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateUserGrade = (grade: number) => {
+    if (currentUser.role === 'student') return; // Students cannot manually change grade
     const updatedUser = { ...currentUser, grade };
     setCurrentUser(updatedUser);
     localStorage.setItem('lp_current_user', JSON.stringify(updatedUser));
@@ -583,7 +589,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             ...existing,
             classId,
             className,
-            grade: classGrade
+            grade: classGrade,
+            school: currentUser.school || 'НИШ ФМН г. Астана',
+            schoolWebsite: currentUser.schoolWebsite || 'https://ast.nis.edu.kz'
           });
         } else {
           const studentId = `user_student_${Date.now()}_${idx + 1}`;
@@ -599,7 +607,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             className,
             email: `${cleanUser.toLowerCase()}@school.kz`,
             avatarUrl: getNeutralAvatarUrl(cleanUser, 'identicon'),
-            school: currentUser.school || 'РФМШ г. Алматы'
+            school: currentUser.school || 'НИШ ФМН г. Астана',
+            schoolWebsite: currentUser.schoolWebsite || 'https://ast.nis.edu.kz'
           };
           createdStudentIds.push(studentId);
           newUsersList.push(newUser);
@@ -617,6 +626,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setUsers(updatedUsers);
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
+
+    const myCurrentUpdated = updatedUsers.find((u) => u.id === currentUser.id);
+    if (myCurrentUpdated) {
+      setCurrentUser(myCurrentUpdated);
+      localStorage.setItem('lp_current_user', JSON.stringify(myCurrentUpdated));
+    }
 
     const newClass: SchoolClass = {
       id: classId,
@@ -663,7 +678,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ...existing,
           classId: targetClass.id,
           className: targetClass.name,
-          grade: targetClass.grade
+          grade: targetClass.grade,
+          school: currentUser.school || 'НИШ ФМН г. Астана',
+          schoolWebsite: currentUser.schoolWebsite || 'https://ast.nis.edu.kz'
         });
       } else {
         const studentId = `user_student_${Date.now()}_${idx + 1}`;
@@ -679,7 +696,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           className: targetClass.name,
           email: `${cleanUser.toLowerCase()}@school.kz`,
           avatarUrl: getNeutralAvatarUrl(cleanUser, 'identicon'),
-          school: currentUser.school || 'РФМШ г. Алматы'
+          school: currentUser.school || 'НИШ ФМН г. Астана',
+          schoolWebsite: currentUser.schoolWebsite || 'https://ast.nis.edu.kz'
         };
         addedIds.push(studentId);
         newUsersList.push(newUser);
@@ -696,6 +714,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setUsers(updatedUsers);
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
+
+    const myCurrentUpdated = updatedUsers.find((u) => u.id === currentUser.id);
+    if (myCurrentUpdated) {
+      setCurrentUser(myCurrentUpdated);
+      localStorage.setItem('lp_current_user', JSON.stringify(myCurrentUpdated));
+    }
 
     if (addedIds.length > 0) {
       setClasses((prev) =>

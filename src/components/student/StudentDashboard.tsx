@@ -33,13 +33,24 @@ export const StudentDashboard: React.FC = () => {
       {/* Welcome Greeting */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800 pb-5 mb-8">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs uppercase text-zinc-500 font-semibold tracking-wider">
               {t('student_portal')}
             </span>
-            <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold">
-              {userGrade} класс
-            </span>
+            {currentUser.classId && currentUser.className ? (
+              <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold">
+                {currentUser.className}
+              </span>
+            ) : (
+              <span className="text-[11px] px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 font-semibold">
+                Класс: (пока не зачислен)
+              </span>
+            )}
+            {currentUser.school && (
+              <span className="text-[11px] text-zinc-400">
+                • {currentUser.school}
+              </span>
+            )}
           </div>
           <h1 className="text-xl sm:text-2xl font-bold font-sans text-zinc-100 tracking-tight mt-0.5">
             {t('student_welcome')}, {currentUser.name}
@@ -58,7 +69,7 @@ export const StudentDashboard: React.FC = () => {
           className="self-start sm:self-auto px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-xs font-bold flex items-center gap-2 transition-all font-mono shadow-md cursor-pointer"
         >
           <FileCode className="w-3.5 h-3.5" />
-          <span>Сдать задание ({userGrade} класс)</span>
+          <span>Сдать задание ({currentUser.className || `${userGrade} класс`})</span>
         </button>
       </div>
 

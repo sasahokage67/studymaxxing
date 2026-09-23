@@ -71,6 +71,9 @@ export interface CodeComparisonResult {
   matchingElements: string[];
   missingElements: string[];
   aiAnomalies: string[];
+  isCodeWorking?: boolean;
+  codeHealth?: 'working' | 'working_minor_slip' | 'broken' | 'empty';
+  brokenReason?: string;
 }
 
 export interface TechnicalDecision {
@@ -88,6 +91,8 @@ export interface AIAnalysis {
   technicalDecisions: TechnicalDecision[];
   potentialGaps: string[];
   codeComparison?: CodeComparisonResult;
+  isCodeWorking?: boolean;
+  codeHealth?: 'working' | 'working_minor_slip' | 'broken' | 'empty';
   generatedAt: string;
 }
 
