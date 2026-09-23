@@ -947,10 +947,8 @@ export const PresentationDeck: React.FC = () => {
               key={idx}
               className="p-12 mb-12 bg-zinc-950 text-zinc-100 border border-zinc-800 rounded-2xl page-break-after-always"
               style={{ pageBreakAfter: 'always', minHeight: '90vh' }}
-            >
               <div className="flex justify-between items-center pb-4 border-b border-zinc-800 mb-6 font-mono text-xs text-zinc-400">
-                <span>STUDYMAXXING // PITCH_DECK</span>
-                <span>СЛАЙД {s.id} / 10</span>
+                <span>STUDYMAXXING</span>
               </div>
               <h2 className="text-3xl font-extrabold text-zinc-100 tracking-tight mb-2">{s.title}</h2>
               <p className="text-sm text-zinc-400 mb-8">{s.subtitle}</p>
@@ -968,9 +966,8 @@ export const PresentationDeck: React.FC = () => {
           {/* Slide Top Meta */}
           <div className="relative z-10 flex items-center justify-between border-b border-zinc-800/80 pb-4 font-mono">
             <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
               <span className="text-[11px] uppercase tracking-wider text-emerald-400 font-bold">
-                {currentSlideData.category}
+                {currentSlideData.category.split('//')[0].trim()}
               </span>
             </div>
 
@@ -987,8 +984,6 @@ export const PresentationDeck: React.FC = () => {
                 )}
                 <span>{copiedSlide === currentSlide ? 'Скопировано' : 'Копировать'}</span>
               </button>
-              <span>•</span>
-              <span className="text-zinc-400 font-bold">{currentSlideData.tag}</span>
             </div>
           </div>
 
@@ -1011,14 +1006,6 @@ export const PresentationDeck: React.FC = () => {
           <div className="relative z-10 pt-3 border-t border-zinc-800/80 flex items-center justify-between font-mono text-[11px] text-zinc-500">
             <div className="flex items-center gap-2">
               <span className="text-zinc-400">STUDYMAXXING</span>
-              <span>//</span>
-              <span>STARTUP PITCH DECK</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-zinc-300 font-bold">{String(currentSlide + 1).padStart(2, '0')}</span>
-              <span>/</span>
-              <span>{String(totalSlides).padStart(2, '0')}</span>
             </div>
           </div>
         </div>
