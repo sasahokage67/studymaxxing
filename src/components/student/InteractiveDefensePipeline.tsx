@@ -3,9 +3,6 @@ import { useApp } from '../../context/AppContext';
 import {
   FileCode,
   Sparkles,
-  Play,
-  Mic,
-  MicOff,
   CheckCircle2,
   AlertTriangle,
   AlertCircle,
@@ -16,7 +13,6 @@ import {
   Code2,
   Upload,
   Cpu,
-  Layers,
   ChevronRight,
   ShieldCheck,
   HelpCircle,
@@ -34,6 +30,37 @@ interface InteractiveDefensePipelineProps {
 
 type PipelineStage = 'code_upload' | 'ai_analyzing' | 'oral_defense' | 'verdict_report';
 
+const GRADE_WORKING_SOLUTIONS: Record<number, { fileName: string; code: string }> = {
+  5: {
+    fileName: 'greeting.py',
+    code: `name = input("Как тебя зовут? ")\nprint("Привет,", name)\n`,
+  },
+  6: {
+    fileName: 'sum_numbers.py',
+    code: `a = int(input("Введите первое число: "))\nb = int(input("Введите второе число: "))\nprint("Сумма чисел:", a + b)\n`,
+  },
+  7: {
+    fileName: 'sign_check.py',
+    code: `x = int(input("Введите число: "))\n\nif x > 0:\n    print("Положительное")\nelse:\n    print("Отрицательное или ноль")\n`,
+  },
+  8: {
+    fileName: 'guess_game.py',
+    code: `secret = 42\n\nprint("Компьютер загадал число от 1 до 100!")\n\nwhile True:\n    guess = int(input("Введите число: "))\n    if guess == secret:\n        print("Поздравляю, вы угадали!")\n        break\n    elif guess < secret:\n        print("Загаданное число больше!")\n    else:\n        print("Загаданное число меньше!")\n`,
+  },
+  9: {
+    fileName: 'even_counter.py',
+    code: `numbers = [12, 5, 8, 19, 24, 7, 30]\ncount = 0\n\nfor num in numbers:\n    if num % 2 == 0:\n        count = count + 1\n\nprint("Количество четных чисел:", count)\n`,
+  },
+  10: {
+    fileName: 'rectangle_area.py',
+    code: `def rectangle_area(w, h):\n    return w * h\n\nw = float(input("Ширина: "))\nh = float(input("Высота: "))\nprint("Площадь:", rectangle_area(w, h))\n`,
+  },
+  11: {
+    fileName: 'phone_book.py',
+    code: `contacts = {"Алихан": "+77011112233", "Динара": "+77025556677"}\nname = input("Введите имя: ")\n\nif name in contacts:\n    print("Номер телефона:", contacts[name])\nelse:\n    print("Контакт не найден")\n`,
+  },
+};
+
 export const getAssignmentMeta = (asg?: Assignment) => {
   if (!asg) {
     return {
@@ -43,20 +70,18 @@ export const getAssignmentMeta = (asg?: Assignment) => {
     };
   }
 
-  let fileName = 'solution.py';
-  if (asg.grade === 5) fileName = 'greeting.py';
-  else if (asg.grade === 6) fileName = 'sum_numbers.py';
-  else if (asg.grade === 7) fileName = 'sign_check.py';
-  else if (asg.grade === 8) fileName = 'guess_game.py';
-  else if (asg.grade === 9) fileName = 'even_counter.py';
-  else if (asg.grade === 10) fileName = 'rectangle_area.py';
-  else if (asg.grade === 11) fileName = 'phone_book.py';
-  else if (asg.title.toLowerCase().includes('калькулятор')) fileName = 'calculator.py';
+  const gradeMeta = asg.grade ? GRADE_WORKING_SOLUTIONS[asg.grade] : undefined;
+  let fileName = gradeMeta?.fileName || 'solution.py';
+  if (asg.title.toLowerCase().includes('калькулятор')) fileName = 'calculator.py';
+
+  // Reliable working code: prioritize referenceCode, then gradeMeta fallback, then starterTemplate
+  const starterCode = asg.referenceCode || gradeMeta?.code || asg.starterTemplate || `# ${asg.grade || ''} класс: ${asg.title}\n`;
+  const benchmarkCode = asg.referenceCode || gradeMeta?.code || starterCode;
 
   return {
     fileName,
-    starterCode: asg.starterTemplate || `# ${asg.grade || ''} класс: ${asg.title}\n`,
-    benchmarkCode: asg.referenceCode || asg.starterTemplate || ''
+    starterCode,
+    benchmarkCode
   };
 };
 
@@ -164,21 +189,19 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
 
   // 15-second Timer countdown effect
   useEffect(() => {
-    let timer: any = null;
-    if (stage === 'oral_defense' && isAnswerStarted && secondsRemaining > 0) {
-      timer = setInterval(() => {
-        setSecondsRemaining((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            handleFinishQuestionAnswer();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    if (stage !== 'oral_defense' || !isAnswerStarted) return;
+    const timer = setInterval(() => {
+      setSecondsRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          handleFinishQuestionAnswer();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
     return () => clearInterval(timer);
-  }, [stage, isAnswerStarted, secondsRemaining]);
+  }, [stage, isAnswerStarted]);
 
   // Local File Upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -223,9 +246,12 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
       setCurrentQIndex(0);
       setEvaluatedResults([]);
       setStage('oral_defense');
-      setIsAnswerStarted(false);
+      // Auto-start: timer and mic begin immediately, no pre-read
+      setIsAnswerStarted(true);
       setSecondsRemaining(15);
       setSpokenTranscript('');
+      setRawSpokenTranscript('');
+      setDetectedCodeTokens([]);
     }, 1700);
   };
 
@@ -293,7 +319,8 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
     // If more questions remain, advance to next question
     if (currentQIndex < generatedQuestions.length - 1) {
       setCurrentQIndex((prev) => prev + 1);
-      setIsAnswerStarted(false);
+      // Auto-start next question immediately - no pre-read screen
+      setIsAnswerStarted(true);
       setSecondsRemaining(15);
       setSpokenTranscript('');
       setRawSpokenTranscript('');
@@ -316,9 +343,6 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
 
   // Instant code token insertion helper for noisy environments or fast speech
   const handleInsertTerm = (token: string) => {
-    if (!isAnswerStarted) {
-      handleStartQuestionAnswer();
-    }
     const updated = spokenTranscript ? `${spokenTranscript} ${token}` : token;
     const processed = SpeechService.processSpeech(updated);
     setSpokenTranscript(processed.normalized);
@@ -432,16 +456,6 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
                     >
                       Заготовка
                     </button>
-                    {currentAssignment.referenceCode && (
-                      <button
-                        type="button"
-                        onClick={() => setCodeContent(getAssignmentMeta(currentAssignment).benchmarkCode)}
-                        className="py-1.5 px-2.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-mono transition-colors text-center cursor-pointer"
-                        title="Вставить эталон учителя для быстрого теста"
-                      >
-                        Тест с эталоном
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={() => setCodeContent('')}
@@ -661,7 +675,7 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
 
       {/* ================= STAGE 3: 15-SECOND ORAL DEFENSE ================= */}
       {stage === 'oral_defense' && activeQuestion && (
-        <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-200">
+        <div className="max-w-2xl mx-auto space-y-4 animate-in fade-in duration-200">
           {/* Question Header & Counter */}
           <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
             <div className="flex items-center gap-2">
@@ -677,21 +691,19 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-zinc-500" />
               <span className={`text-base font-bold font-mono ${
-                !isAnswerStarted
-                  ? 'text-zinc-400'
-                  : secondsRemaining <= 4
+                secondsRemaining <= 4
                   ? 'text-red-400 animate-ping'
                   : secondsRemaining <= 7
                   ? 'text-amber-400'
                   : 'text-emerald-400'
               }`}>
-                {isAnswerStarted ? `${secondsRemaining} сек` : '15 сек лимит'}
+                {secondsRemaining} сек
               </span>
             </div>
           </div>
 
           {/* Question Box */}
-          <div className="p-6 rounded-xl border border-zinc-800 bg-zinc-950 space-y-4 shadow-xl">
+          <div className="p-6 rounded-xl border border-emerald-500/30 bg-zinc-950 space-y-3 shadow-xl">
             <div className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold flex items-center gap-2">
               <HelpCircle className="w-3.5 h-3.5 text-emerald-400" />
               <span>Контрольный вопрос ИИ к коду:</span>
@@ -700,171 +712,127 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
             <p className="text-base sm:text-lg font-bold font-sans text-zinc-100 leading-snug">
               «{activeQuestion.questionText}»
             </p>
-
-            {/* Purpose hint */}
-            <div className="p-3 bg-zinc-900/60 border border-zinc-800/80 rounded-lg text-xs text-zinc-400">
-              <span className="text-zinc-500 font-semibold">Фокус проверки: </span>
-              {activeQuestion.purpose}
-            </div>
           </div>
 
-          {/* Answer State Controller */}
-          {!isAnswerStarted ? (
-            /* Pre-Start State: Student reads question, then clicks Start */
-            <div className="p-6 border border-zinc-800 bg-zinc-900/40 rounded-xl text-center space-y-4">
-              <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto">
-                <Mic className="w-6 h-6" />
-              </div>
+          {/* Active Answering State — always shown, timer auto-started */}
+          <div className="p-5 border border-emerald-500/40 bg-zinc-950 rounded-xl space-y-4 relative overflow-hidden">
+            {/* Progress Bar */}
+            <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all duration-1000 ${
+                  secondsRemaining <= 4 ? 'bg-red-500' : secondsRemaining <= 7 ? 'bg-amber-400' : 'bg-emerald-500'
+                }`}
+                style={{ width: `${(secondsRemaining / 15) * 100}%` }}
+              />
+            </div>
 
-              <div>
-                <h3 className="text-sm font-bold text-zinc-100">
-                  Готовы ответить?
-                </h3>
-                <p className="text-xs text-zinc-400 mt-1 max-w-md mx-auto">
-                  Нажмите кнопку ниже, когда будете готовы говорить в микрофон. Отсчет 15 секунд начнется сразу.
-                </p>
+            {/* Status & Waveform */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
+                <span className="text-xs text-red-400 font-bold uppercase tracking-wider">
+                  МИКРОФОН АКТИВЕН — ИДЕТ ЗАПИСЬ
+                </span>
               </div>
-
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={handleStartQuestionAnswer}
-                  className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-sm rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer inline-flex items-center gap-2"
-                >
-                  <Play className="w-4 h-4 fill-current" />
-                  <span>НАЧАТЬ ОТВЕТ (15 СЕКУНД)</span>
-                </button>
+              <div className="flex items-center gap-1">
+                <span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
+                <span className="w-1 h-5 bg-emerald-400 rounded animate-pulse delay-75" />
+                <span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-150" />
+                <span className="w-1 h-6 bg-emerald-400 rounded animate-pulse delay-100" />
+                <span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
               </div>
             </div>
-          ) : (
-            /* Active Answering State: Timer is running, speech recognition active */
-            <div className="p-6 border border-emerald-500/40 bg-zinc-950 rounded-xl space-y-4 relative overflow-hidden animate-in zoom-in-95 duration-150">
-              {/* Progress Bar of 15 seconds */}
-              <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all duration-1000 ${
-                    secondsRemaining <= 4 ? 'bg-red-500' : secondsRemaining <= 7 ? 'bg-amber-400' : 'bg-emerald-500'
-                  }`}
-                  style={{ width: `${(secondsRemaining / 15) * 100}%` }}
+
+            {/* Transcript Box */}
+            <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg min-h-[90px] text-xs font-sans text-zinc-200 flex flex-col space-y-3">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] uppercase font-mono text-zinc-400 font-semibold flex items-center gap-1.5">
+                    <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
+                    Распознанная речь:
+                  </span>
+                  <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    Phonetic Normalizer v2.6
+                  </span>
+                </div>
+                <textarea
+                  value={spokenTranscript}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSpokenTranscript(val);
+                    const processed = SpeechService.processSpeech(val);
+                    setDetectedCodeTokens(processed.detectedTokens);
+                  }}
+                  className="w-full bg-zinc-950 text-zinc-100 font-mono text-xs sm:text-sm leading-relaxed p-3 rounded-lg border border-zinc-800 focus:border-emerald-500/60 focus:outline-none resize-none transition-colors shadow-inner"
+                  rows={3}
+                  placeholder="Говорите в микрофон... Текст появится здесь автоматически"
                 />
               </div>
 
-              {/* Status & Live Waveform Animation */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
-                  <span className="text-xs text-red-400 font-bold uppercase tracking-wider">
-                    МИКРОФОН АКТИВЕН // ИДЕТ ЗАПИСЬ
-                  </span>
-                </div>
-
-                {/* Animated Audio Waveform */}
-                <div className="flex items-center gap-1">
-                  <span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
-                  <span className="w-1 h-5 bg-emerald-400 rounded animate-pulse delay-75" />
-                  <span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-150" />
-                  <span className="w-1 h-6 bg-emerald-400 rounded animate-pulse delay-100" />
-                  <span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
-                </div>
-              </div>
-
-              {/* Live Speech Recognition Transcript Box with Real-time Technical Term Extraction */}
-              <div className="p-4 bg-zinc-900 border border-zinc-800 rounded-lg min-h-[110px] text-xs font-sans text-zinc-200 flex flex-col justify-between space-y-3">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] uppercase font-mono text-zinc-400 font-semibold flex items-center gap-1.5">
-                      <Volume2 className="w-3.5 h-3.5 text-emerald-400" />
-                      Распознанная речь (с автокоррекцией терминов Python):
-                    </span>
-                    <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold flex items-center gap-1">
-                      <Sparkles className="w-2.5 h-2.5" />
-                      Phonetic Normalizer v2.6
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <textarea
-                      value={spokenTranscript}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setSpokenTranscript(val);
-                        const processed = SpeechService.processSpeech(val);
-                        setDetectedCodeTokens(processed.detectedTokens);
-                      }}
-                      className="w-full bg-zinc-950 text-zinc-100 font-mono text-xs sm:text-sm leading-relaxed p-3 rounded-lg border border-zinc-800 focus:border-emerald-500/60 focus:outline-none resize-none transition-colors shadow-inner"
-                      rows={3}
-                      placeholder="Говорите в микрофон... Текст появится здесь автоматически с нормализацией Python (можно редактировать или вставлять термины по клику)"
-                    />
-                  </div>
-                </div>
-
-                {/* Instant Technical Syntax Chips for Noise-proof Recognition */}
-                <div className="pt-2 border-t border-zinc-800/80">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] text-zinc-400 font-mono font-semibold flex items-center gap-1">
-                      <Code2 className="w-3 h-3 text-emerald-400" />
-                      Быстрая вставка терминов (1 клик):
-                    </span>
-                    <span className="text-[9px] text-zinc-500 font-mono">
-                      кликните если микрофон не расслышал
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {[
-                      'input()', 'int()', 'float()', 'while True', 'break',
-                      'print()', 'count += 1', 'b != 0', '% 2 == 0', 'if / elif', 'return'
-                    ].map((term) => (
-                      <button
-                        key={term}
-                        type="button"
-                        onClick={() => handleInsertTerm(term)}
-                        className="px-2 py-0.5 rounded bg-zinc-800/90 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/50 border border-zinc-700/60 text-zinc-300 font-mono text-[10px] font-medium transition-all cursor-pointer active:scale-95"
-                      >
-                        + {term}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Real-time Code Tokens Detected */}
-                {detectedCodeTokens.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-zinc-800/70">
-                    <span className="text-[10px] text-emerald-400 font-mono font-semibold flex items-center gap-1">
-                      <Code2 className="w-3 h-3" />
-                      Токены кода в ответе:
-                    </span>
-                    {detectedCodeTokens.map((token, idx) => (
-                      <span
-                        key={idx}
-                        className="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] font-bold shadow-sm"
-                      >
-                        {token}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between text-[10px] text-zinc-500 font-mono pt-1 border-t border-zinc-900">
-                  <span>Язык: ru-RU (JSGF Grammar Biasing)</span>
-                  <span>Слов: {spokenTranscript.split(/\s+/).filter(Boolean).length}</span>
+              {/* Quick term chips */}
+              <div className="pt-2 border-t border-zinc-800/80">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[
+                    'input()', 'int()', 'float()', 'while True', 'break',
+                    'print()', 'count += 1', '% 2 == 0', 'if / elif', 'return'
+                  ].map((term) => (
+                    <button
+                      key={term}
+                      type="button"
+                      onClick={() => handleInsertTerm(term)}
+                      className="px-2 py-0.5 rounded bg-zinc-800/90 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/50 border border-zinc-700/60 text-zinc-300 font-mono text-[10px] font-medium transition-all cursor-pointer active:scale-95"
+                    >
+                      + {term}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="pt-2 border-t border-zinc-900 flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleFinishQuestionAnswer}
-                  className="w-full sm:w-auto px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Завершить ответ</span>
-                </button>
-              </div>
+              {/* Detected tokens */}
+              {detectedCodeTokens.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-zinc-800/70">
+                  <span className="text-[10px] text-emerald-400 font-mono font-semibold">Токены:</span>
+                  {detectedCodeTokens.map((token, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] font-bold"
+                    >
+                      {token}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Finish button */}
+            <div className="pt-1 flex justify-end">
+              <button
+                type="button"
+                onClick={handleFinishQuestionAnswer}
+                className="w-full sm:w-auto px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <Check className="w-4 h-4" />
+                <span>Завершить ответ</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Code Viewer Panel — student sees their submitted code while answering */}
+          <div className="border border-zinc-800 bg-zinc-950 rounded-xl overflow-hidden">
+            <div className="px-4 py-2.5 bg-zinc-900/80 border-b border-zinc-800 flex items-center gap-2 text-xs text-zinc-400">
+              <FileCode className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="font-semibold text-zinc-300">{fileName}</span>
+              <span className="text-zinc-600">— ваш код (для справки)</span>
+            </div>
+            <pre className="p-4 text-[11px] sm:text-xs font-mono text-zinc-300 leading-relaxed max-h-48 overflow-y-auto bg-black/30 whitespace-pre-wrap break-all">
+              {codeContent}
+            </pre>
+          </div>
         </div>
       )}
+
+
 
       {/* ================= STAGE 4: FINAL AI VERDICT REPORT ================= */}
       {stage === 'verdict_report' && finalVerdict && (

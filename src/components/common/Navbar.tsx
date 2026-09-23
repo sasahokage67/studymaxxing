@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { LogOut, LogIn, User as UserIcon, Presentation } from 'lucide-react';
+import { LogOut, LogIn, User as UserIcon } from 'lucide-react';
 import { Language } from '../../i18n/translations';
 import { sanitizeAvatarUrl, FALLBACK_AVATAR_SVG } from '../../utils/avatar';
 
@@ -100,23 +100,8 @@ export const Navbar: React.FC = () => {
           )}
         </div>
 
-        {/* Right Controls: Presentation + Languages + Auth */}
+        {/* Right Controls: Languages + Auth */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Presentation Deck Button */}
-          <button
-            onClick={() => setCurrentView('presentation')}
-            className={`px-2.5 py-1.5 rounded-lg border text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
-              currentView === 'presentation'
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/40 font-bold shadow-sm'
-                : 'bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
-            }`}
-            title="Открыть презентацию на 10 слайдов"
-          >
-            <Presentation className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Презентация</span>
-            <span className="text-[10px] text-zinc-500 font-mono">10</span>
-          </button>
-
           {/* Language Selector */}
           <div className="flex items-center border border-zinc-800 rounded bg-zinc-900/80 p-1 text-xs font-mono">
             {(['ru', 'kz', 'en'] as Language[]).map((lng) => (

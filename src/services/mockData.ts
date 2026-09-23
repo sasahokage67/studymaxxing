@@ -109,8 +109,8 @@ export const SEEDED_ASSIGNMENTS: Assignment[] = [
     referenceCode: `name = input("Как тебя зовут? ")
 print("Привет,", name)`,
     starterTemplate: `# 5 класс: Приветствие пользователя
-# Запросите имя пользователя и выведите приветствие
 name = input("Как тебя зовут? ")
+print("Привет,", name)
 `,
     createdAt: '2026-09-20T10:00:00Z',
   },
@@ -132,9 +132,9 @@ name = input("Как тебя зовут? ")
 b = int(input("Введите второе число: "))
 print("Сумма чисел:", a + b)`,
     starterTemplate: `# 6 класс: Сложение двух чисел
-# Запросите два целых числа и выведите их сумму
 a = int(input("Введите первое число: "))
 b = int(input("Введите второе число: "))
+print("Сумма чисел:", a + b)
 `,
     createdAt: '2026-09-19T11:00:00Z',
   },
@@ -159,8 +159,12 @@ if x > 0:
 else:
     print("Отрицательное или ноль")`,
     starterTemplate: `# 7 класс: Ветвление if/else
-# Запросите число x и проверьте, больше ли оно нуля
 x = int(input("Введите число: "))
+
+if x > 0:
+    print("Положительное")
+else:
+    print("Отрицательное или ноль")
 `,
     createdAt: '2026-09-15T14:30:00Z',
   },
@@ -231,6 +235,12 @@ print("Количество четных чисел:", count)`,
     starterTemplate: `# 9 класс: Подсчет четных чисел
 numbers = [12, 5, 8, 19, 24, 7, 30]
 count = 0
+
+for num in numbers:
+    if num % 2 == 0:
+        count = count + 1
+
+print("Количество четных чисел:", count)
 `,
     createdAt: '2026-09-17T09:00:00Z',
   },
@@ -257,6 +267,10 @@ print("Площадь:", rectangle_area(w, h))`,
     starterTemplate: `# 10 класс: Функция площади прямоугольника
 def rectangle_area(w, h):
     return w * h
+
+w = float(input("Ширина: "))
+h = float(input("Высота: "))
+print("Площадь:", rectangle_area(w, h))
 `,
     createdAt: '2026-09-16T12:00:00Z',
   },
@@ -284,6 +298,11 @@ else:
     starterTemplate: `# 11 класс: Телефонный справочник (словари)
 contacts = {"Алихан": "+77011112233", "Динара": "+77025556677"}
 name = input("Введите имя: ")
+
+if name in contacts:
+    print("Номер телефона:", contacts[name])
+else:
+    print("Контакт не найден")
 `,
     createdAt: '2026-09-14T15:00:00Z',
   }

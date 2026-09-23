@@ -947,6 +947,7 @@ export const PresentationDeck: React.FC = () => {
               key={idx}
               className="p-12 mb-12 bg-zinc-950 text-zinc-100 border border-zinc-800 rounded-2xl page-break-after-always"
               style={{ pageBreakAfter: 'always', minHeight: '90vh' }}
+            >
               <div className="flex justify-between items-center pb-4 border-b border-zinc-800 mb-6 font-mono text-xs text-zinc-400">
                 <span>STUDYMAXXING</span>
               </div>
