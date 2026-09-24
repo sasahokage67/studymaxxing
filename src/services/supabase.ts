@@ -1,12 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import type { User } from '../types';
+import type { User, Submission, DefenseSession, SchoolClass } from '../types';
 
 const SUPABASE_URL = 'https://sjefmoliejulcxsaeyfx.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_qnARnaklKKaeJcaQmtUtsA_vt_RuLw0';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ─── Row shape in Supabase ───────────────────────────────────────────────────
+// ─── lp_users ─────────────────────────────────────────────────────────────
 interface SupabaseUser {
   id: string;
   username: string;
@@ -22,7 +22,7 @@ interface SupabaseUser {
   class_name: string | null;
 }
 
-export const toRow = (u: User): SupabaseUser => ({
+export const toUserRow = (u: User): SupabaseUser => ({
   id: u.id,
   username: u.username,
   name: u.name,
@@ -37,7 +37,7 @@ export const toRow = (u: User): SupabaseUser => ({
   class_name: u.className || null,
 });
 
-export const fromRow = (r: SupabaseUser): User => ({
+export const fromUserRow = (r: SupabaseUser): User => ({
   id: r.id,
   username: r.username,
   name: r.name,
@@ -52,65 +52,170 @@ export const fromRow = (r: SupabaseUser): User => ({
   className: r.class_name || undefined,
 });
 
-/** Upsert one user to Supabase */
 export const sbUpsertUser = async (u: User): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('lp_users')
-      .upsert(toRow(u), { onConflict: 'id' });
+    const { error } = await supabase.from('lp_users').upsert(toUserRow(u), { onConflict: 'id' });
     if (error) {
-      console.warn('[supabase] upsert failed:', error.message);
+      console.warn('[supabase] upsert user failed:', error.message);
       return false;
     }
     return true;
-  } catch (err) {
-    console.warn('[supabase] upsert exception:', err);
+  } catch {
     return false;
   }
 };
 
-/** Update specific fields for one user */
-export const sbUpdateUser = async (id: string, patch: Partial<SupabaseUser>): Promise<boolean> => {
-  try {
-    const { error } = await supabase
-      .from('lp_users')
-      .update(patch)
-      .eq('id', id);
-    if (error) {
-      console.warn('[supabase] update failed:', error.message);
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.warn('[supabase] update exception:', err);
-    return false;
-  }
-};
-
-/** Fetch all users from Supabase */
 export const sbFetchUsers = async (): Promise<User[]> => {
   try {
     const { data, error } = await supabase.from('lp_users').select('*');
-    if (error) throw error;
-    return (data as SupabaseUser[]).map(fromRow);
-  } catch (e: any) {
-    console.warn('[supabase] fetch failed:', e?.message || e);
+    if (error || !data) return [];
+    return (data as SupabaseUser[]).map(fromUserRow);
+  } catch {
     return [];
   }
 };
 
-/** Fetch a single user by username from Supabase */
-export const sbFetchUserByUsername = async (username: string): Promise<User | null> => {
+// ─── lp_submissions ───────────────────────────────────────────────────────
+export const sbUpsertSubmission = async (sub: Submission): Promise<boolean> => {
   try {
-    const clean = username.trim().toLowerCase().replace(/^@/, '');
-    const { data, error } = await supabase
-      .from('lp_users')
-      .select('*')
-      .ilike('username', clean)
-      .limit(1);
-    if (error || !data || data.length === 0) return null;
-    return fromRow(data[0] as SupabaseUser);
+    const row = {
+      id: sub.id,
+      assignment_id: sub.assignmentId,
+      student_id: sub.studentId,
+      student_name: sub.studentName,
+      student_email: sub.studentEmail || '',
+      submitted_at: sub.submittedAt,
+      file_name: sub.fileName || '',
+      code_snippet: sub.codeSnippet || '',
+      status: sub.status,
+      defense_session_id: sub.defenseSessionId || null,
+      analysis: sub.analysis || null,
+    };
+    const { error } = await supabase.from('lp_submissions').upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.warn('[supabase] upsert submission failed:', error.message);
+      return false;
+    }
+    return true;
   } catch {
-    return null;
+    return false;
+  }
+};
+
+export const sbFetchSubmissions = async (): Promise<Submission[]> => {
+  try {
+    const { data, error } = await supabase.from('lp_submissions').select('*');
+    if (error || !data) return [];
+    return data.map((r: any) => ({
+      id: r.id,
+      assignmentId: r.assignment_id,
+      studentId: r.student_id,
+      studentName: r.student_name,
+      studentEmail: r.student_email || '',
+      submittedAt: r.submitted_at,
+      fileName: r.file_name,
+      codeSnippet: r.code_snippet,
+      status: r.status,
+      defenseSessionId: r.defense_session_id || undefined,
+      analysis: r.analysis || undefined
+    }));
+  } catch {
+    return [];
+  }
+};
+
+// ─── lp_defense_sessions ──────────────────────────────────────────────────
+export const sbUpsertDefenseSession = async (ds: DefenseSession): Promise<boolean> => {
+  try {
+    const row = {
+      id: ds.id,
+      submission_id: ds.submissionId,
+      student_id: ds.studentId,
+      assignment_id: ds.assignmentId,
+      overall_score: ds.overallScore ?? null,
+      status: ds.status,
+      questions: ds.questions || [],
+      answers: ds.answers || {},
+      overall_rubric: ds.overallRubric || null,
+      teacher_review: ds.teacherReview || null,
+      completed_at: ds.completedAt || new Date().toISOString()
+    };
+    const { error } = await supabase.from('lp_defense_sessions').upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.warn('[supabase] upsert defense session failed:', error.message);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const sbFetchDefenseSessions = async (): Promise<Record<string, DefenseSession>> => {
+  try {
+    const { data, error } = await supabase.from('lp_defense_sessions').select('*');
+    if (error || !data) return {};
+    const map: Record<string, DefenseSession> = {};
+    data.forEach((r: any) => {
+      map[r.id] = {
+        id: r.id,
+        submissionId: r.submission_id,
+        studentId: r.student_id,
+        assignmentId: r.assignment_id,
+        overallScore: r.overall_score ?? undefined,
+        status: r.status,
+        questions: r.questions || [],
+        answers: r.answers || {},
+        overallRubric: r.overall_rubric || undefined,
+        teacherReview: r.teacher_review || undefined,
+        completedAt: r.completed_at
+      };
+    });
+    return map;
+  } catch {
+    return {};
+  }
+};
+
+// ─── lp_classes ───────────────────────────────────────────────────────────
+export const sbUpsertClass = async (cls: SchoolClass): Promise<boolean> => {
+  try {
+    const row = {
+      id: cls.id,
+      grade: cls.grade,
+      letter: cls.letter,
+      name: cls.name,
+      subject: cls.subject,
+      academic_year: cls.academicYear,
+      student_ids: cls.studentIds || [],
+      created_at: cls.createdAt
+    };
+    const { error } = await supabase.from('lp_classes').upsert(row, { onConflict: 'id' });
+    if (error) {
+      console.warn('[supabase] upsert class failed:', error.message);
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const sbFetchClasses = async (): Promise<SchoolClass[]> => {
+  try {
+    const { data, error } = await supabase.from('lp_classes').select('*');
+    if (error || !data) return [];
+    return data.map((r: any) => ({
+      id: r.id,
+      grade: r.grade,
+      letter: r.letter,
+      name: r.name,
+      subject: r.subject,
+      academicYear: r.academic_year,
+      studentIds: r.student_ids || [],
+      createdAt: r.created_at
+    }));
+  } catch {
+    return [];
   }
 };

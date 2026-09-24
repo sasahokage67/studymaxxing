@@ -23,7 +23,16 @@ import {
 import { AIService, DefenseSessionVerdict, EvaluatedQuestionResult } from '../services/aiService';
 import { Language, TRANSLATIONS } from '../i18n/translations';
 import { getNeutralAvatarUrl, sanitizeAvatarUrl } from '../utils/avatar';
-import { sbUpsertUser, sbUpdateUser, sbFetchUsers } from '../services/supabase';
+import {
+  sbUpsertUser,
+  sbFetchUsers,
+  sbUpsertSubmission,
+  sbFetchSubmissions,
+  sbUpsertDefenseSession,
+  sbFetchDefenseSessions,
+  sbUpsertClass,
+  sbFetchClasses
+} from '../services/supabase';
 
 interface AppContextType {
   currentUser: User;
@@ -356,18 +365,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('lp_users', JSON.stringify(users));
   }, [users]);
 
-  // ─── Sync users from Supabase on mount ───────────────────────────────────
-  // Merges cloud users into local state so any device sees all registered accounts
-  useEffect(() => {
+  // ─── Cloud Sync from Supabase (mount, interval, and tab focus) ─────────
+  const syncFromCloud = () => {
+    // 1. Users
     sbFetchUsers().then((remoteUsers) => {
-      if (remoteUsers.length === 0) return;
+      if (!remoteUsers || remoteUsers.length === 0) return;
       setUsers((prev) => {
         const map = new Map<string, User>();
-        // Seed first, then local (localStorage overrides seed), then remote (Supabase is authoritative)
         SEEDED_USERS.forEach((u) => map.set(u.id, u));
         prev.forEach((u) => map.set(u.id, u));
-        remoteUsers.forEach((u) => map.set(u.id, { ...u,
-          // sanitize avatar from remote
+        remoteUsers.forEach((u) => map.set(u.id, {
+          ...u,
           avatarUrl: sanitizeAvatarUrl(u.avatarUrl, u.username, u.role === 'teacher' ? 'shapes' : 'identicon')
         }));
         const merged = Array.from(map.values());
@@ -375,6 +383,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return merged;
       });
     });
+
+    // 2. Submissions
+    sbFetchSubmissions().then((remoteSubs) => {
+      if (!remoteSubs || remoteSubs.length === 0) return;
+      setSubmissions((prev) => {
+        const map = new Map<string, Submission>();
+        SEEDED_SUBMISSIONS.forEach((s) => map.set(s.id, s));
+        prev.forEach((s) => map.set(s.id, s));
+        remoteSubs.forEach((s) => map.set(s.id, s));
+        const merged = Array.from(map.values()).sort(
+          (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+        );
+        localStorage.setItem('lp_submissions', JSON.stringify(merged));
+        return merged;
+      });
+    });
+
+    // 3. Defense Sessions
+    sbFetchDefenseSessions().then((remoteSessions) => {
+      if (!remoteSessions || Object.keys(remoteSessions).length === 0) return;
+      setDefenseSessions((prev) => {
+        const merged = { ...SEEDED_DEFENSE_SESSIONS, ...prev, ...remoteSessions };
+        localStorage.setItem('lp_defense_sessions', JSON.stringify(merged));
+        return merged;
+      });
+    });
+
+    // 4. Classes
+    sbFetchClasses().then((remoteClasses) => {
+      if (!remoteClasses || remoteClasses.length === 0) return;
+      setClasses((prev) => {
+        const map = new Map<string, SchoolClass>();
+        SEEDED_CLASSES.forEach((c) => map.set(c.id, c));
+        prev.forEach((c) => map.set(c.id, c));
+        remoteClasses.forEach((c) => map.set(c.id, c));
+        const merged = Array.from(map.values());
+        localStorage.setItem('lp_classes', JSON.stringify(merged));
+        return merged;
+      });
+    });
+  };
+
+  useEffect(() => {
+    syncFromCloud();
+    const interval = setInterval(syncFromCloud, 8000);
+    window.addEventListener('focus', syncFromCloud);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', syncFromCloud);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -708,6 +766,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setClasses((prev) => [newClass, ...prev]);
+    sbUpsertClass(newClass);
     return newClass;
   };
 
@@ -790,11 +849,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (addedIds.length > 0) {
       setClasses((prev) =>
-        prev.map((c) =>
-          c.id === classId
-            ? { ...c, studentIds: Array.from(new Set([...c.studentIds, ...addedIds])) }
-            : c
-        )
+        prev.map((c) => {
+          if (c.id === classId) {
+            const updated = { ...c, studentIds: Array.from(new Set([...c.studentIds, ...addedIds])) };
+            sbUpsertClass(updated);
+            return updated;
+          }
+          return c;
+        })
       );
     }
 
@@ -944,6 +1006,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem('lp_defense_sessions', JSON.stringify(next));
         return next;
       });
+      // Cloud sync to Supabase
+      sbUpsertDefenseSession(newSession);
     }
 
     const newSub: Submission = {
@@ -967,6 +1031,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('lp_submissions', JSON.stringify(next));
       return next;
     });
+    // Cloud sync to Supabase
+    sbUpsertSubmission(newSub);
 
     return newSub;
   };
@@ -1117,23 +1183,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: review.status || 'verified'
     };
 
-    setDefenseSessions((prev) => ({
-      ...prev,
-      [sessionId]: {
-        ...session,
-        status: teacherReview.status,
-        overallScore: teacherReview.overrideScore ?? session.overallScore,
-        teacherReview
-      }
-    }));
+    const updatedSession: DefenseSession = {
+      ...session,
+      status: teacherReview.status,
+      overallScore: teacherReview.overrideScore ?? session.overallScore,
+      teacherReview
+    };
 
-    setSubmissions((prev) =>
-      prev.map((s) =>
-        s.defenseSessionId === sessionId
-          ? { ...s, status: teacherReview.status }
-          : s
-      )
-    );
+    setDefenseSessions((prev) => {
+      const next = { ...prev, [sessionId]: updatedSession };
+      localStorage.setItem('lp_defense_sessions', JSON.stringify(next));
+      return next;
+    });
+    sbUpsertDefenseSession(updatedSession);
+
+    setSubmissions((prev) => {
+      const next = prev.map((s) => {
+        if (s.defenseSessionId === sessionId) {
+          const updatedSub = { ...s, status: teacherReview.status };
+          sbUpsertSubmission(updatedSub);
+          return updatedSub;
+        }
+        return s;
+      });
+      localStorage.setItem('lp_submissions', JSON.stringify(next));
+      return next;
+    });
   };
 
   const resetDemoData = () => {
