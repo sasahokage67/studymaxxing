@@ -262,12 +262,16 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
       isFinishingRef.current = false;
       setIsFinishing(false);
 
-      // Save to AppContext
+      // Save to AppContext with full defense results & verdict
       await createSubmission({
         studentName: currentUser.name,
         assignmentId: selectedAssignmentId,
         fileName,
-        codeSnippet: codeContent
+        codeSnippet: codeContent,
+        analysis: currentAnalysis || undefined,
+        questions: generatedQuestions,
+        results: updatedResults,
+        verdict
       });
     }
   };

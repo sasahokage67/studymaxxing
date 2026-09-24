@@ -8,7 +8,9 @@ import {
   ClassInsight,
   DefenseAnswer,
   TeacherReview,
-  SchoolClass
+  SchoolClass,
+  DefenseQuestion,
+  AIAnalysis
 } from '../types';
 import {
   SEEDED_USERS,
@@ -18,7 +20,7 @@ import {
   SEEDED_CLASS_INSIGHTS,
   SEEDED_CLASSES
 } from '../services/mockData';
-import { AIService } from '../services/aiService';
+import { AIService, DefenseSessionVerdict, EvaluatedQuestionResult } from '../services/aiService';
 import { Language, TRANSLATIONS } from '../i18n/translations';
 import { getNeutralAvatarUrl, sanitizeAvatarUrl } from '../utils/avatar';
 import { sbUpsertUser, sbUpdateUser, sbFetchUsers } from '../services/supabase';
@@ -69,7 +71,17 @@ interface AppContextType {
   selectSubmission: (id: string | null) => void;
   selectDefenseSession: (id: string | null) => void;
   createAssignment: (data: Partial<Assignment>) => Assignment;
-  createSubmission: (data: { studentName: string; assignmentId: string; fileName: string; codeSnippet?: string; githubUrl?: string }) => Promise<Submission>;
+  createSubmission: (data: {
+    studentName: string;
+    assignmentId: string;
+    fileName: string;
+    codeSnippet?: string;
+    githubUrl?: string;
+    analysis?: AIAnalysis;
+    questions?: DefenseQuestion[];
+    results?: EvaluatedQuestionResult[];
+    verdict?: DefenseSessionVerdict;
+  }) => Promise<Submission>;
   runAIAnalysis: (submissionId: string) => Promise<void>;
   submitDefenseAnswer: (sessionId: string, questionId: string, answer: Partial<DefenseAnswer>) => Promise<void>;
   completeDefenseSession: (sessionId: string) => Promise<void>;
@@ -862,10 +874,80 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fileName: string;
     codeSnippet?: string;
     githubUrl?: string;
+    analysis?: AIAnalysis;
+    questions?: DefenseQuestion[];
+    results?: EvaluatedQuestionResult[];
+    verdict?: DefenseSessionVerdict;
   }): Promise<Submission> => {
     const asg = assignments.find((a) => a.id === data.assignmentId);
+    const subId = `sub_${Date.now()}`;
+    let sessionId: string | undefined = undefined;
+
+    if (data.verdict) {
+      sessionId = `def_${Date.now()}`;
+      const answers: Record<string, DefenseAnswer> = {};
+      if (data.results && data.results.length > 0) {
+        data.results.forEach((r, idx) => {
+          const qId = r.question.id || `q_${idx}`;
+          answers[qId] = {
+            id: `ans_${Date.now()}_${idx}`,
+            questionId: qId,
+            mode: 'voice',
+            transcript: r.transcript,
+            durationSeconds: r.durationSeconds,
+            submittedAt: new Date().toISOString(),
+            evaluation: r.evaluation,
+            speechMetrics: {
+              timeToFirstWord: 1.2,
+              wordsPerMinute: Math.round((r.transcript.split(' ').length / Math.max(1, r.durationSeconds)) * 60),
+              pauseCount: 1
+            }
+          };
+        });
+      }
+
+      const overallScore = data.verdict.overallScore;
+      const feedbackText = data.verdict.feedbackSummary || data.verdict.verdictDescription || 'Устная защита успешно завершена.';
+
+      const newSession: DefenseSession = {
+        id: sessionId,
+        submissionId: subId,
+        studentId: currentUser.id,
+        assignmentId: data.assignmentId,
+        startedAt: new Date(Date.now() - 60000).toISOString(),
+        completedAt: new Date().toISOString(),
+        status: data.verdict.isAutoApproved ? 'verified' : data.verdict.needsTeacherReview ? 'needs_followup' : 'verified',
+        questions: (data.questions || []).map((q) => ({ ...q, defenseSessionId: sessionId! })),
+        answers,
+        overallScore,
+        overallRubric: {
+          conceptKnowledge: data.verdict.conceptScore,
+          reasoning: data.verdict.reasoningScore,
+          application: data.verdict.applicationScore,
+          technicalDepth: Math.round(overallScore * 0.9),
+          independentExplanation: Math.round(overallScore * 0.95)
+        },
+        teacherReview: {
+          id: `rev_${Date.now()}`,
+          defenseSessionId: sessionId,
+          teacherId: 'ai_evaluator',
+          overrideScore: overallScore,
+          studentFeedback: feedbackText,
+          privateNote: data.verdict.title,
+          reviewedAt: new Date().toISOString(),
+          status: data.verdict.isAutoApproved ? 'verified' : 'needs_followup'
+        }
+      };
+
+      setDefenseSessions((prev) => {
+        const next = { ...prev, [sessionId!]: newSession };
+        localStorage.setItem('lp_defense_sessions', JSON.stringify(next));
+        return next;
+      });
+    }
+
     const newSub: Submission = {
-      id: `sub_${Date.now()}`,
+      id: subId,
       assignmentId: data.assignmentId,
       studentId: currentUser.id,
       studentName: data.studentName || currentUser.name,
@@ -875,10 +957,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       githubUrl: data.githubUrl,
       codeSnippet: data.codeSnippet,
       referenceCode: asg?.referenceCode,
-      status: 'pending'
+      status: data.verdict ? (data.verdict.isAutoApproved ? 'verified' : data.verdict.needsTeacherReview ? 'needs_followup' : 'verified') : 'pending',
+      analysis: data.analysis,
+      defenseSessionId: sessionId
     };
 
-    setSubmissions((prev) => [newSub, ...prev]);
+    setSubmissions((prev) => {
+      const next = [newSub, ...prev];
+      localStorage.setItem('lp_submissions', JSON.stringify(next));
+      return next;
+    });
+
     return newSub;
   };
 

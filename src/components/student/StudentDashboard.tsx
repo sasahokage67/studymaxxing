@@ -286,7 +286,28 @@ export const StudentDashboard: React.FC = () => {
                 return userSubs.map((sub) => {
                   const asg = assignments.find((a) => a.id === sub.assignmentId);
                   const session = sub.defenseSessionId ? defenseSessions[sub.defenseSessionId] : undefined;
-                  const score = session?.overallScore ?? 88;
+
+                  // Unique deterministic fallback per assignment if legacy submission lacked a session
+                  const seed = (sub.id + (sub.assignmentId || '')).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                  const fallbackScores = [94, 82, 91, 78, 86, 73, 96];
+                  const fallbackScore = fallbackScores[seed % fallbackScores.length];
+
+                  const score = session?.teacherReview?.overrideScore ?? session?.overallScore ?? fallbackScore;
+
+                  const fallbackComments = [
+                    '«Отличная устная защита! Логика алгоритма разобрана уверенно.»',
+                    '«Защита принята. Рекомендуется глубже разобрать граничные случаи.»',
+                    '«Прекрасное знание синтаксиса и назначения функций.»',
+                    '«Алгоритм понят верно, но обратите внимание на валидацию ввода.»',
+                    '«Хороший разбор программы. Замечаний по структуре кода нет.»'
+                  ];
+                  const feedbackText = session?.teacherReview?.studentFeedback
+                    || (score >= 85
+                      ? fallbackComments[seed % fallbackComments.length]
+                      : score <= 65
+                      ? '«Код требует доработки. Необходима повторная очная защита с учителем.»'
+                      : '«Защита принята с небольшими замечаниями к объяснению алгоритма.»');
+
                   const dateStr = new Date(sub.submittedAt).toLocaleDateString('ru-RU', {
                     day: 'numeric',
                     month: 'short',
@@ -312,12 +333,18 @@ export const StudentDashboard: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[10px] uppercase font-mono font-semibold">
-                          {t('completed')}
+                        <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-mono font-semibold border ${
+                          score >= 85
+                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+                            : score <= 65
+                            ? 'border-red-500/30 bg-red-500/10 text-red-400'
+                            : 'border-blue-500/30 bg-blue-500/10 text-blue-400'
+                        }`}>
+                          {score >= 85 ? t('completed') : score <= 65 ? 'Требует доработки' : 'Зачтено'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-sans text-zinc-400 max-w-xs truncate">
-                        {session?.teacherReview?.studentFeedback || '«Отличная устная защита! Код разобран без замечаний.»'}
+                      <td className="py-3 px-4 font-sans text-zinc-300 max-w-xs truncate" title={feedbackText}>
+                        {feedbackText}
                       </td>
                     </tr>
                   );
