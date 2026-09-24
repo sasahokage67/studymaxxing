@@ -173,12 +173,18 @@ export class SpeechService {
       recognition.interimResults = true;
       recognition.lang = 'ru-RU';
 
-      // Grammar biasing (Chrome/WebKit Web Speech API)
-      const SpeechGrammarList = (window as any).SpeechGrammarList || (window as any).webkitSpeechGrammarList;
-      if (SpeechGrammarList) {
-        const speechList = new SpeechGrammarList();
-        speechList.addFromString(this.getProgrammingGrammar(), 1.0);
-        recognition.grammars = speechList;
+      // Grammar biasing (safe optional progressive enhancement)
+      try {
+        const SpeechGrammarList = (window as any).SpeechGrammarList || (window as any).webkitSpeechGrammarList;
+        if (SpeechGrammarList) {
+          const speechList = new SpeechGrammarList();
+          if (typeof speechList.addFromString === 'function') {
+            speechList.addFromString(this.getProgrammingGrammar(), 1.0);
+            recognition.grammars = speechList;
+          }
+        }
+      } catch (grammarErr) {
+        // Grammar biasing is optional, do not fail recognition if browser rejects JSGF
       }
 
       return recognition;

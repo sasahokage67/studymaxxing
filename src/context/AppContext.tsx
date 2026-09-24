@@ -21,6 +21,7 @@ import {
 import { AIService } from '../services/aiService';
 import { Language, TRANSLATIONS } from '../i18n/translations';
 import { getNeutralAvatarUrl, sanitizeAvatarUrl } from '../utils/avatar';
+import { sbUpsertUser, sbUpdateUser, sbFetchUsers } from '../services/supabase';
 
 interface AppContextType {
   currentUser: User;
@@ -343,6 +344,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('lp_users', JSON.stringify(users));
   }, [users]);
 
+  // ─── Sync users from Supabase on mount ───────────────────────────────────
+  // Merges cloud users into local state so any device sees all registered accounts
+  useEffect(() => {
+    sbFetchUsers().then((remoteUsers) => {
+      if (remoteUsers.length === 0) return;
+      setUsers((prev) => {
+        const map = new Map<string, User>();
+        // Seed first, then local (localStorage overrides seed), then remote (Supabase is authoritative)
+        SEEDED_USERS.forEach((u) => map.set(u.id, u));
+        prev.forEach((u) => map.set(u.id, u));
+        remoteUsers.forEach((u) => map.set(u.id, { ...u,
+          // sanitize avatar from remote
+          avatarUrl: sanitizeAvatarUrl(u.avatarUrl, u.username, u.role === 'teacher' ? 'shapes' : 'identicon')
+        }));
+        const merged = Array.from(map.values());
+        localStorage.setItem('lp_users', JSON.stringify(merged));
+        return merged;
+      });
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     localStorage.setItem('lp_current_user', JSON.stringify(currentUser));
   }, [currentUser]);
@@ -367,6 +389,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAuthModalTab(tab);
     if (defaultRole) setAuthModalRole(defaultRole);
     setIsAuthModalOpen(true);
+    // Refresh cloud users so accounts registered on other machines are available
+    sbFetchUsers().then((remoteUsers) => {
+      if (!remoteUsers || remoteUsers.length === 0) return;
+      setUsers((prev) => {
+        const map = new Map<string, User>();
+        SEEDED_USERS.forEach((u) => map.set(u.id, u));
+        prev.forEach((u) => map.set(u.id, u));
+        remoteUsers.forEach((u) => map.set(u.id, {
+          ...u,
+          avatarUrl: sanitizeAvatarUrl(u.avatarUrl, u.username, u.role === 'teacher' ? 'shapes' : 'identicon')
+        }));
+        const merged = Array.from(map.values());
+        localStorage.setItem('lp_users', JSON.stringify(merged));
+        return merged;
+      });
+    });
   };
 
   const closeAuthModal = () => {
@@ -463,6 +501,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUsers(updated);
     localStorage.setItem('lp_users', JSON.stringify(updated));
 
+    // Persist to Supabase cloud database
+    sbUpsertUser(newUser);
+
     setCurrentUser(newUser);
     setIsAuthenticated(true);
     setIsAuthModalOpen(false);
@@ -501,6 +542,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updatedUsers = users.map((u) => (u.id === currentUser.id ? { ...u, password: cleanPass } : u));
     setUsers(updatedUsers);
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
+    sbUpsertUser(updatedUser);
     return { success: true };
   };
 
@@ -517,6 +559,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updatedUsers = users.map((u) => (u.id === currentUser.id ? { ...u, avatarUrl: safeAvatar } : u));
     setUsers(updatedUsers);
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
+    sbUpsertUser(updatedUser);
   };
 
   const updateUserSchool = (school: string, schoolWebsite?: string) => {
@@ -528,6 +571,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updatedUsers = users.map((u) => (u.id === currentUser.id ? { ...u, school, schoolWebsite } : u));
     setUsers(updatedUsers);
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
+    sbUpsertUser(updatedUser);
   };
 
   const updateUserGrade = (grade: number) => {
@@ -539,6 +583,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const updatedUsers = users.map((u) => (u.id === currentUser.id ? { ...u, grade } : u));
     setUsers(updatedUsers);
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
+    sbUpsertUser(updatedUser);
   };
 
   const transliterate = (str: string): string => {
@@ -629,6 +674,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUsers(updatedUsers);
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
 
+    // Sync to Supabase
+    newUsersList.forEach(sbUpsertUser);
+    existingUsersToUpdate.forEach(sbUpsertUser);
+
     const myCurrentUpdated = updatedUsers.find((u) => u.id === currentUser.id);
     if (myCurrentUpdated) {
       setCurrentUser(myCurrentUpdated);
@@ -716,6 +765,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setUsers(updatedUsers);
     localStorage.setItem('lp_users', JSON.stringify(updatedUsers));
+
+    // Sync to Supabase
+    newUsersList.forEach(sbUpsertUser);
+    existingUsersToUpdate.forEach(sbUpsertUser);
 
     const myCurrentUpdated = updatedUsers.find((u) => u.id === currentUser.id);
     if (myCurrentUpdated) {

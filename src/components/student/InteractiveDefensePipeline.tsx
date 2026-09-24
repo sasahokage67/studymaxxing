@@ -17,7 +17,10 @@ import {
   ShieldCheck,
   HelpCircle,
   Volume2,
-  Bot
+  Bot,
+  Mic,
+  MicOff,
+  Loader2
 } from 'lucide-react';
 import { AIService, DefenseSessionVerdict, EvaluatedQuestionResult } from '../../services/aiService';
 import { SpeechService } from '../../services/speechService';
@@ -162,13 +165,30 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
   const [detectedCodeTokens, setDetectedCodeTokens] = useState<string[]>([]);
   const [evaluatedResults, setEvaluatedResults] = useState<EvaluatedQuestionResult[]>([]);
   const [finalVerdict, setFinalVerdict] = useState<DefenseSessionVerdict | null>(null);
-
+  const [micStatus, setMicStatus] = useState<'listening' | 'denied' | 'unsupported' | 'idle'>('idle');
+  const [isFinishing, setIsFinishing] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
 
   // Current active question
   const activeQuestion = generatedQuestions[currentQIndex];
+
+  // Up-to-date refs to prevent stale closures and double execution
+  const isFinishingRef = useRef(false);
+  const activeQuestionRef = useRef(activeQuestion);
+  activeQuestionRef.current = activeQuestion;
+  const spokenTranscriptRef = useRef(spokenTranscript);
+  spokenTranscriptRef.current = spokenTranscript;
+  const secondsRemainingRef = useRef(secondsRemaining);
+  secondsRemainingRef.current = secondsRemaining;
+  const evaluatedResultsRef = useRef(evaluatedResults);
+  evaluatedResultsRef.current = evaluatedResults;
+  const currentQIndexRef = useRef(currentQIndex);
+  currentQIndexRef.current = currentQIndex;
+  const generatedQuestionsRef = useRef(generatedQuestions);
+  generatedQuestionsRef.current = generatedQuestions;
+  const finishCurrentQuestionRef = useRef<() => void>();
 
   // Sync assignment when prop changes
   useEffect(() => {
@@ -187,21 +207,215 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
     }
   }, [selectedAssignmentId, assignments]);
 
-  // 15-second Timer countdown effect
+  // Stop mic & evaluate answer for current question
+  const handleFinishQuestionAnswer = async () => {
+    if (isFinishingRef.current) return;
+    isFinishingRef.current = true;
+    setIsFinishing(true);
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
+      recognitionRef.current = null;
+    }
+
+    const currentQ = activeQuestionRef.current;
+    const currentIdx = currentQIndexRef.current;
+    const allQuestions = generatedQuestionsRef.current;
+    const duration = Math.max(2, 15 - secondsRemainingRef.current);
+    const finalTranscript = spokenTranscriptRef.current.trim() || 'Ученик не успел дать развернутый ответ в отведенное время.';
+
+    if (!currentQ) {
+      isFinishingRef.current = false;
+      setIsFinishing(false);
+      return;
+    }
+
+    const evaluation = await AIService.evaluateAnswer(currentQ, finalTranscript, duration);
+
+    const newResult: EvaluatedQuestionResult = {
+      question: currentQ,
+      transcript: finalTranscript,
+      durationSeconds: duration,
+      evaluation
+    };
+
+    const updatedResults = [...evaluatedResultsRef.current, newResult];
+    setEvaluatedResults(updatedResults);
+    evaluatedResultsRef.current = updatedResults;
+
+    // Advance to next question or show verdict
+    if (currentIdx < allQuestions.length - 1) {
+      setCurrentQIndex(currentIdx + 1);
+      setSecondsRemaining(15);
+      setSpokenTranscript('');
+      setRawSpokenTranscript('');
+      setDetectedCodeTokens([]);
+      isFinishingRef.current = false;
+      setIsFinishing(false);
+    } else {
+      // All questions answered -> Compute Final Automated Verdict
+      const verdict = AIService.calculateSessionVerdict(updatedResults, currentAnalysis?.codeComparison);
+      setFinalVerdict(verdict);
+      setStage('verdict_report');
+      isFinishingRef.current = false;
+      setIsFinishing(false);
+
+      // Save to AppContext
+      await createSubmission({
+        studentName: currentUser.name,
+        assignmentId: selectedAssignmentId,
+        fileName,
+        codeSnippet: codeContent
+      });
+    }
+  };
+
+  finishCurrentQuestionRef.current = handleFinishQuestionAnswer;
+
+  // 15-second Timer countdown effect per question
   useEffect(() => {
-    if (stage !== 'oral_defense' || !isAnswerStarted) return;
+    if (stage !== 'oral_defense') return;
+
+    setSecondsRemaining(15);
+    isFinishingRef.current = false;
+    setIsFinishing(false);
+
     const timer = setInterval(() => {
       setSecondsRemaining((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          handleFinishQuestionAnswer();
+          finishCurrentQuestionRef.current?.();
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
+
     return () => clearInterval(timer);
-  }, [stage, isAnswerStarted]);
+  }, [stage, currentQIndex]);
+
+  // Speech recognition & microphone lifecycle per question
+  useEffect(() => {
+    if (stage !== 'oral_defense') {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {}
+        recognitionRef.current = null;
+      }
+      setMicStatus('idle');
+      return;
+    }
+
+    let isEffectCleanedUp = false;
+    let recognition: any = null;
+
+    // Request audio permission in browser
+    if (typeof navigator !== 'undefined' && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+      navigator.mediaDevices.getUserMedia({ audio: true }).catch((err) => {
+        console.warn('[Microphone permission error]', err);
+        if (!isEffectCleanedUp) {
+          setMicStatus('denied');
+        }
+      });
+    }
+
+    try {
+      recognition = SpeechService.createRecognition();
+      if (!recognition) {
+        setMicStatus('unsupported');
+        return;
+      }
+
+      recognition.onstart = () => {
+        if (!isEffectCleanedUp) {
+          setMicStatus('listening');
+        }
+      };
+
+      recognition.onresult = (event: any) => {
+        let current = '';
+        for (let i = 0; i < event.results.length; i++) {
+          current += event.results[i][0].transcript + ' ';
+        }
+        const raw = current.trim();
+        setRawSpokenTranscript(raw);
+
+        // Real-time phonetic and terminology normalization
+        const processed = SpeechService.processSpeech(raw);
+        setSpokenTranscript(processed.normalized);
+        setDetectedCodeTokens(processed.detectedTokens);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('[SpeechRecognition error]', event?.error);
+        if (!isEffectCleanedUp) {
+          if (event?.error === 'not-allowed' || event?.error === 'service-not-allowed') {
+            setMicStatus('denied');
+          }
+        }
+      };
+
+      recognition.onend = () => {
+        // Continuous mode in Chrome auto-stops on silence.
+        // Auto-restart if answer is still active!
+        if (!isEffectCleanedUp && stage === 'oral_defense' && !isFinishingRef.current) {
+          try {
+            recognition.start();
+          } catch (e) {}
+        }
+      };
+
+      recognition.start();
+      recognitionRef.current = recognition;
+      setMicStatus('listening');
+    } catch (e: any) {
+      console.warn('[SpeechRecognition exception]', e);
+      setMicStatus('unsupported');
+    }
+
+    return () => {
+      isEffectCleanedUp = true;
+      if (recognition) {
+        try {
+          recognition.stop();
+        } catch (e) {}
+      }
+      recognitionRef.current = null;
+    };
+  }, [stage, currentQIndex]);
+
+  // Manual microphone restart trigger
+  const handleRestartMic = () => {
+    try {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch (e) {}
+      }
+      const rec = SpeechService.createRecognition();
+      if (rec) {
+        rec.onstart = () => setMicStatus('listening');
+        rec.onresult = (event: any) => {
+          let current = '';
+          for (let i = 0; i < event.results.length; i++) {
+            current += event.results[i][0].transcript + ' ';
+          }
+          const raw = current.trim();
+          setRawSpokenTranscript(raw);
+          const processed = SpeechService.processSpeech(raw);
+          setSpokenTranscript(processed.normalized);
+          setDetectedCodeTokens(processed.detectedTokens);
+        };
+        rec.onerror = () => setMicStatus('denied');
+        rec.start();
+        recognitionRef.current = rec;
+        setMicStatus('listening');
+      }
+    } catch (e) {
+      console.warn('Manual mic restart failed:', e);
+    }
+  };
 
   // Local File Upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,99 +460,12 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
       setCurrentQIndex(0);
       setEvaluatedResults([]);
       setStage('oral_defense');
-      // Auto-start: timer and mic begin immediately, no pre-read
       setIsAnswerStarted(true);
       setSecondsRemaining(15);
       setSpokenTranscript('');
       setRawSpokenTranscript('');
       setDetectedCodeTokens([]);
     }, 1700);
-  };
-
-  // Start 15s timer & mic recognition
-  const handleStartQuestionAnswer = () => {
-    setIsAnswerStarted(true);
-    setSecondsRemaining(15);
-    setSpokenTranscript('');
-    setRawSpokenTranscript('');
-    setDetectedCodeTokens([]);
-
-    // Attempt browser Web Speech API with JSGF programming grammar biasing
-    try {
-      const recognition = SpeechService.createRecognition();
-      if (recognition) {
-        recognition.onresult = (event: any) => {
-          let current = '';
-          for (let i = 0; i < event.results.length; i++) {
-            current += event.results[i][0].transcript + ' ';
-          }
-          const raw = current.trim();
-          setRawSpokenTranscript(raw);
-
-          // Real-time phonetic and terminology normalization
-          const processed = SpeechService.processSpeech(raw);
-          setSpokenTranscript(processed.normalized);
-          setDetectedCodeTokens(processed.detectedTokens);
-        };
-
-        recognition.onerror = () => {};
-        recognition.start();
-        recognitionRef.current = recognition;
-      }
-    } catch (e) {
-      console.log('Web Speech API fallback mode');
-    }
-  };
-
-  // Stop mic & evaluate answer
-  const handleFinishQuestionAnswer = async () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {}
-    }
-
-    const duration = 15 - secondsRemaining;
-    const finalTranscript = spokenTranscript.trim() || 'Ученик не успел дать развернутый ответ в отведенное время.';
-
-    if (!activeQuestion) return;
-
-    // Evaluate answer via AI
-    const evaluation = await AIService.evaluateAnswer(activeQuestion, finalTranscript, Math.max(2, duration));
-
-    const newResult: EvaluatedQuestionResult = {
-      question: activeQuestion,
-      transcript: finalTranscript,
-      durationSeconds: Math.max(2, duration),
-      evaluation
-    };
-
-    const updatedResults = [...evaluatedResults, newResult];
-    setEvaluatedResults(updatedResults);
-
-    // If more questions remain, advance to next question
-    if (currentQIndex < generatedQuestions.length - 1) {
-      setCurrentQIndex((prev) => prev + 1);
-      // Auto-start next question immediately - no pre-read screen
-      setIsAnswerStarted(true);
-      setSecondsRemaining(15);
-      setSpokenTranscript('');
-      setRawSpokenTranscript('');
-      setDetectedCodeTokens([]);
-    } else {
-      // All 3 questions answered -> Compute Final Automated Verdict
-      const verdict = AIService.calculateSessionVerdict(updatedResults, currentAnalysis?.codeComparison);
-      setFinalVerdict(verdict);
-      setStage('verdict_report');
-
-      // Save to AppContext
-      await createSubmission({
-        studentName: currentUser.name,
-        assignmentId: selectedAssignmentId,
-        fileName,
-        codeSnippet: codeContent
-      });
-    }
   };
 
   // Instant code token insertion helper for noisy environments or fast speech
@@ -727,20 +854,58 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
             </div>
 
             {/* Status & Waveform */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
-                <span className="text-xs text-red-400 font-bold uppercase tracking-wider">
-                  МИКРОФОН АКТИВЕН — ИДЕТ ЗАПИСЬ
-                </span>
+                {micStatus === 'listening' ? (
+                  <>
+                    <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
+                    <span className="text-xs text-red-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                      <Mic className="w-3.5 h-3.5" />
+                      МИКРОФОН АКТИВЕН — ИДЕТ ЗАПИСЬ
+                    </span>
+                  </>
+                ) : micStatus === 'denied' ? (
+                  <>
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                    <span className="text-xs text-amber-400 font-medium flex items-center gap-1.5">
+                      <MicOff className="w-3.5 h-3.5" />
+                      Микрофон заблокирован в браузере
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleRestartMic}
+                      className="text-[10px] px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-mono transition-colors"
+                    >
+                      Повторить
+                    </button>
+                  </>
+                ) : micStatus === 'unsupported' ? (
+                  <>
+                    <span className="w-2.5 h-2.5 rounded-full bg-zinc-500" />
+                    <span className="text-xs text-zinc-400 flex items-center gap-1.5">
+                      <MicOff className="w-3.5 h-3.5" />
+                      Голос не поддерживается — отвечайте текстом
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-xs text-zinc-400">
+                      Подключение микрофона...
+                    </span>
+                  </>
+                )}
               </div>
-              <div className="flex items-center gap-1">
-                <span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
-                <span className="w-1 h-5 bg-emerald-400 rounded animate-pulse delay-75" />
-                <span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-150" />
-                <span className="w-1 h-6 bg-emerald-400 rounded animate-pulse delay-100" />
-                <span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
-              </div>
+
+              {micStatus === 'listening' && (
+                <div className="flex items-center gap-1">
+                  <span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
+                  <span className="w-1 h-5 bg-emerald-400 rounded animate-pulse delay-75" />
+                  <span className="w-1 h-4 bg-emerald-400 rounded animate-pulse delay-150" />
+                  <span className="w-1 h-6 bg-emerald-400 rounded animate-pulse delay-100" />
+                  <span className="w-1 h-3 bg-emerald-400 rounded animate-pulse" />
+                </div>
+              )}
             </div>
 
             {/* Transcript Box */}
@@ -809,11 +974,21 @@ export const InteractiveDefensePipeline: React.FC<InteractiveDefensePipelineProp
             <div className="pt-1 flex justify-end">
               <button
                 type="button"
+                disabled={isFinishing}
                 onClick={handleFinishQuestionAnswer}
-                className="w-full sm:w-auto px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                className="w-full sm:w-auto px-5 py-2 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-zinc-950 font-bold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
               >
-                <Check className="w-4 h-4" />
-                <span>Завершить ответ</span>
+                {isFinishing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Оценка ИИ...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Завершить ответ</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
